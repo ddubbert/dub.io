@@ -8,7 +8,7 @@ When using Microservices it is recommended to also make use of loosely coupled a
 
 Lastly, in realtime environments components need to process high loads in short periods of time. Even small delays might aggrevate the usability of a product / service. One reason for those delays is the time needed for service communication. To negate / minimize such a time loss monolithic architectures are used. In contrast to distributed architectures, they represent a bottle neck because of limited ressources. It needs to be tested, if a combination of Microservices and Event Stream Processing can overcome previous hurdles and acclerate the procession of tasks to allow for distributed realtime applications and how this needs to be done.
 
-## Objective
+## Objectives
 The objective is to create a simple copy of the massive multiplayer online game Agar.io with the help of Apache Kafka, Node.js and GraphQL-Services. The main game principles are simple:
 * All players are on the same map.
 * Each player is represented by a circle.
