@@ -10,12 +10,14 @@ Lastly, in realtime environments components need to process high loads in short 
 
 ## Objectives
 The objective is to create a simple copy of the massive multiplayer online game Agar.io with the help of Apache Kafka, Node.js and GraphQL-Services. The main game principles are simple:
+
 * All players are on the same map.
 * Each player is represented by a circle.
 * Players are allowed to move freely accross the map.
 * "Food"-Items are generated automatically / randomly. Players can collect these to grow in size.
 * If players collide, the bigger one will consume the other.
 * Players loose if they were consumed by others.
+
 Even though there are additional rules and possibilities, these are the ones that form the basis for this project. Each seperate task will be handled by one service. There might be services for movement, collision, food operations, user generation, statistics and so on. The synchronization of all the clients / players is another important task, assigned to a seperate service. This service will collect all the needed informations to update the map. It will also distribute this synchronized map-data to all the clients, so that these only need to update their current view without the need of implementing any other logic.
 
 Focus points for this project are:
