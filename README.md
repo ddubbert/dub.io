@@ -6,7 +6,7 @@ Event based architectures are a common way of realizing projects. They enable th
 
 When using Microservices it is recommended to also make use of loosely coupled and asynchronous communication styles, so that an event based communication is often preferred. Apache Kafka is therefore a perfect fit for this project, in that it is one of the most used and refined tools for implementing communication channels in the form of continuous event streams.
 
-Lastly, in realtime environments components need to process high loads in short periods of time. Even small delays might aggrevate the usability of a product / service. One reason for those delays is the time needed for service communication. To negate / minimize such a time loss monolithic architectures are used. In contrast to distributed architectures, they represent a bottle neck because of limited ressources. It needs to be tested, if a combination of Microservices and Event Stream Processing can overcome previous hurdles and acclerate the procession of tasks to allow for distributed realtime applications.
+Lastly, in realtime environments components need to process high loads in short periods of time. Even small delays might aggrevate the usability of a product / service. One reason for those delays is the time needed for service communication. To negate / minimize such a time loss monolithic architectures are used. In contrast to distributed architectures, they represent a bottle neck because of limited ressources. It needs to be tested, if a combination of Microservices and Event Stream Processing can overcome previous hurdles and acclerate the procession of tasks to allow for distributed realtime applications and how this needs to be done.
 
 ## Objective
 The objective is to create a simple copy of the massive multiplayer online game Agar.io with the help of Apache Kafka, Node.js and GraphQL-Services. The main game principles are simple:
@@ -20,7 +20,8 @@ Even though there are additional rules and possibilities, these are the ones tha
 
 Focus points for this project are:
 * The event-design and setup of communication channels (Apache Kafka-Architecture)
+  * Testing and comparing benefits of different designs
 * The design and connection of services (Microservice-Architecture, GraphQL)
-* Microservice architectures and needed components (apart from the services)
+  * Microservice architectures and needed components (apart from the services)
 
 ## Installation
