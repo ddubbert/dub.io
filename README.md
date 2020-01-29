@@ -1,4 +1,4 @@
-# dub.io
+# doen.io
 This project is meant as a usability test of Continuous Event Stream Processing in a realtime environment. It represents an Agar.io clone based on Continuous Event Streams and Microservices. The Services are based on Node.js and GraphQL. The communication between these services is realized in a loosely coupled way with the help of Apache Kafka.
 
 ## Background
