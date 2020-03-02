@@ -1,0 +1,21 @@
+{
+  "name": "workshop",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "nodemon ./src/app",
+    "lint": "eslint ./src --fix"
+  },
+  "dependencies": {
+    "@apollo/gateway": "0.6.11",
+    "apollo-server": "2.6.3",
+    "graphql": "14.4.2",
+    "dotenv": "7.0.0",
+    "nodemon": "1.17.5"
+  },
+  "devDependencies": {
+    "eslint": "5.16.0",
+    "eslint-config-airbnb-base": "13.1.0",
+    "eslint-plugin-import": "2.17.3"
+  }
+}
