@@ -57,7 +57,7 @@ router.post('/', async function(req, res, next) {
     }
   }
 
-  res.send('finished');
+  setTimeout(() => { res.send('finished'); }, 5000);
 });
 
 module.exports = router;
