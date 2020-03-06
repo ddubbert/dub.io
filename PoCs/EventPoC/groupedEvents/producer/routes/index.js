@@ -1,8 +1,13 @@
+const avro = require('avsc');
+const sizeOf = require('object-sizeof');
 const { Kafka } = require('kafkajs');
 const express = require('express');
 const router = express.Router();
 
 const config = require('../config');
+
+const schema = require('../../avro_schemas/userPosition');
+const positions = avro.Type.forSchema(schema.userPositions);
 
 const kafka = new Kafka({
   clientId: 'producer',
@@ -16,7 +21,7 @@ const producer = kafka.producer();
 const run = async () => {
   const topicsToCreate = [{
     topic: config.kafkaTopic,
-    numPartitions: 1,
+    numPartitions: 3,
     replicationFactor: 1,
   }];
 
@@ -43,13 +48,25 @@ run().catch(console.error);
 /* POST to start test. */
 router.post('/', async function(req, res, next) {
   const numberOfEvents = req.body.numberOfEvents || 1000;
-  console.log(new Date().getTime());
+  
+  const object = { 
+    userId: `100`,
+    x: 100,
+    y: 150
+  };
 
-  for(let i = 0; i < numberOfEvents; i += 1) {
+  const positionObjects = { positions: [...Array(1000).keys()].map(() => object) };
+  console.log(sizeOf(positionObjects));
+  const message = positions.toBuffer(positionObjects);
+  console.log(sizeOf(message));
+
+  for(let i = 0; i < numberOfEvents / 1000; i += 1) {
     try {
       await producer.send({
         topic: config.kafkaTopic,
-        messages: [{ value: `Event-${i}` }],
+        messages: [{
+          value: message,
+        }],
         acks: 0,
       });
     } catch(e) {
@@ -58,7 +75,7 @@ router.post('/', async function(req, res, next) {
     }
   }
 
-  res.send('finished');
+  setTimeout(() => { res.send('finished'); }, 5000);
 });
 
 module.exports = router;

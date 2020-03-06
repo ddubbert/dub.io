@@ -50,7 +50,7 @@ router.post('/', async function(req, res, next) {
       await producer.send({
         topic: config.kafkaTopic,
         messages: [{ value: `Event-${i}` }],
-        acks: 0,
+        acks: -1,
       });
     } catch(e) {
       console.log(`[kafka-producer -> ${config.kafkaTopic}]: broker update failed`);
