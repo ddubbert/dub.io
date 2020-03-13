@@ -1,0 +1,58 @@
+scalar DateTime
+
+type Query {
+  """ Subscribe to all grid updates. """
+  getGrid: Grid
+}
+
+type Subscription {
+  """ Subscribe to all grid updates. """
+  renderUpdate: Grid!
+}
+
+type Grid {
+  cellSize: Float!
+  cols: [Column!]!
+  playerNodes: [PlayerNode]!
+}
+
+type Column {
+  rows: [Row!]!
+}
+
+type Row {
+  nodes: [Node]!
+}
+
+type Node {
+  id: ID!
+  type: String!
+  createdAt: DateTime!
+  title: String!
+  position: Position!
+  radius: Float!
+  color: String
+  sprite: String
+}
+
+type PlayerNode {
+  id: ID!
+  type: String!
+  createdAt: DateTime!
+  title: String!
+  position: Position!
+  radius: Float!
+  color: String
+  sprite: String
+  gridIndices: GridIndices! 
+}
+
+type GridIndices {
+  x: Int!
+  y: Int!
+}
+
+type Position {
+  x: Float!
+  y: Float!
+}

@@ -1,0 +1,57 @@
+scalar DateTime
+
+type Query {
+  getUser(userId: ID!) : User!
+}
+
+type Mutation {
+    """ Creates a new User. """
+    createUser(data: UserCreateInput!) : User!
+
+    """ Changes direction of movement for a user """
+    changeDirection(userId: ID!, newDirection: Direction!) : User!
+}
+
+type Subscription {
+  """ Subscribe to all grid updates. """
+  userLost(userId: ID!): User!
+}
+
+type User {
+    id: ID!
+    type: String!
+    createdAt: DateTime!
+    title: String!
+    position: Position!
+    radius: Float!
+    color: String
+    sprite: String
+}
+
+type Position {
+  x: Float!
+  y: Float!
+}
+
+input UserCreateInput {
+  title: String!
+  position: PositionInput!
+  sprite: String
+  color: String
+}
+
+input PositionInput {
+  x: Float!
+  y: Float!
+}
+
+enum Direction {
+  UP
+  DOWN
+  LEFT
+  RIGHT
+  UPLEFT
+  UPRIGHT
+  DOWNLEFT
+  DOWNRIGHT
+}

@@ -1,3 +1,4 @@
+
 require('dotenv').config()
 
 const { ApolloServer } = require('apollo-server')
@@ -6,8 +7,8 @@ const config = require('../config')
 
 const gateway = new ApolloGateway({
   serviceList: [
-    { name: 'users', url: 'http://localhost:3001' },
-    { name: 'products', url: 'http://localhost:3002' },
+    { name: 'user', url: 'http://localhost:3001' },
+    { name: 'render', url: 'http://localhost:3002' },
   ],
 });
 
@@ -17,7 +18,7 @@ const gateway = new ApolloGateway({
   const server = new ApolloServer({
     schema,
     executor,
-    context: req => ({
+    context: (req) => ({
       ...req,
     }),
     playground: {

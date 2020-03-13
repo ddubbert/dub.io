@@ -6,5 +6,5 @@ module.exports = {
     voyager: '/voyager',
     endpoint: '/graphql',
     subscriptions: '/subscriptions',
-  }
+  },
 }
