@@ -7,7 +7,7 @@ type Query {
 
 type Subscription {
   """ Subscribe to all grid updates. """
-  renderUpdate: Grid!
+  renderUpdates: Grid!
 }
 
 type Grid {

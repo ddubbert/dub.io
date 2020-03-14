@@ -98,7 +98,7 @@ const createTopics = async () => {
   },
   {
     topic: config.gridTopic,
-    numPartitions: 1,
+    numPartitions: 3,
     replicationFactor: 1,
   }]
 

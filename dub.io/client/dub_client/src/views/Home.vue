@@ -9,8 +9,48 @@
       justify="center"
       style="height: 100%; max-height: 100%;"
     >
-      <v-col cols="2">
+      <v-col cols="2" style="height: 100%; width: 100%">
+        <v-card
+          width="100%"
+          height="100%"
+          outlined
+          style="border: 1px solid black"
+        >
+          <v-card-title>
+            Leaderboard:
+          </v-card-title>
+
+          <v-divider style="border: 0.5px solid black"></v-divider>
+
+          <v-list
+            disabled
+            flat
+            avatar
+            two-line
+          >
+            <template v-for="(item, i) in $store.state.leaderBoard">
+              <v-list-item
+                :key="i"
+                inactive
+              >
+                <v-list-item-avatar>
+                  <v-img
+                    contain
+                    :src="item.sprite"
+                    :style="`background-color: ${item.color}`"
+                  ></v-img>
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title v-html="item.title"></v-list-item-title>
+                  <v-list-item-subtitle v-html="item.points"></v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider :key="`divider-${i}`" inset></v-divider>
+            </template>
+          </v-list>
+        </v-card>
       </v-col>
+
       <v-col
         cols="8"
         style="height: 100%; max-height: 100%;"
@@ -44,7 +84,7 @@
 
             <v-row>
               <v-col align="center" justify="center">
-                <v-img height="10vh" width="10vh" :src="sprite"></v-img>
+                <v-img contain height="10vh" width="10vh" :src="sprite"></v-img>
                 <v-text-field
                   label="Sprite-URI"
                   v-model="sprite"

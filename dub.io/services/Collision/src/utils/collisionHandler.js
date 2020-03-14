@@ -41,9 +41,6 @@ const checkCollision = async (node1, node2) => {
   const dist = Math.sqrt(dx * dx + dy * dy)
 
   if (dist < node1.radius + node2.radius) {
-    // console.log(node1.position.x, node1.position.y, node1.radius)
-    // console.log(node2.position.x, node2.position.y, node2.radius)
-    // console.log('')
     sendCollisionMessage(node1, node2)
   }
 }
@@ -95,12 +92,12 @@ const checkForCollisions = async (message) => {
 const createTopics = async () => {
   const topicsToCreate = [{
     topic: config.collisionTopic,
-    numPartitions: 1,
+    numPartitions: 3,
     replicationFactor: 1,
   },
   {
     topic: config.gridTopic,
-    numPartitions: 1,
+    numPartitions: 3,
     replicationFactor: 1,
   }]
 

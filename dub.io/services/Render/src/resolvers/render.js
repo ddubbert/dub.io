@@ -5,12 +5,12 @@ module.exports = (renderHandler) => ({
     getGrid: () => renderHandler.getGrid(),
   },
   Subscription: {
-    renderUpdate: {
+    renderUpdates: {
       subscribe: (_parent, _args, context, _info) => {
         const { pubsub } = context
         setTimeout(() => {
           const grid = renderHandler.getGrid()
-          if (grid) pubsub.publish(CHANNELS.RENDER_UPDATE_CHANNEL, { renderUpdate: grid })
+          if (grid) pubsub.publish(CHANNELS.RENDER_UPDATE_CHANNEL, { renderUpdates: grid })
         }, 500)
         return pubsub.asyncIterator(CHANNELS.RENDER_UPDATE_CHANNEL)
       },

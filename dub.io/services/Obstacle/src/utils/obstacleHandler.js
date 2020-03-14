@@ -144,7 +144,7 @@ const createTopics = async () => {
     replicationFactor: 1,
   }, {
     topic: config.collisionTopic,
-    numPartitions: 1,
+    numPartitions: 3,
     replicationFactor: 1,
   }, {
     topic: config.userEventsTopic,

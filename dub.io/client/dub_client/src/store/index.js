@@ -7,10 +7,11 @@ import graphqlClient from '../utils/graphql.utils';
 
 const renderClient = graphqlClient(`${config.http}${config.host}:3002/graphql`, `${config.ws}${config.host}:3002/subscriptions`);
 const userClient = graphqlClient(`${config.http}${config.host}:3001/graphql`, `${config.ws}${config.host}:3001/subscriptions`);
+const statisticClient = graphqlClient(`${config.http}${config.host}:3007/graphql`, `${config.ws}${config.host}:3007/subscriptions`);
 
 const GRID_SUBSCRIPTION = gql`
   subscription update {
-    renderUpdate {
+    renderUpdates {
       cellSize
       cols {
         rows {
@@ -36,6 +37,19 @@ const GRID_SUBSCRIPTION = gql`
         sprite
         color
         gridIndices { x, y }
+      }
+    }
+  }
+`;
+
+const LEADER_BOARD_SUBSCRIPTION = gql`
+  subscription updateBoad {
+    leaderBoardUpdates {
+      entries {
+        title
+        points
+        sprite
+        color
       }
     }
   }
@@ -93,17 +107,22 @@ let userSub = null;
 export default new Vuex.Store({
   state: {
     grid: {},
+    leaderBoard: [],
     userId: '',
     musicOn: false,
   },
   getters: {
     grid: (state) => state.grid,
+    leaderBoard: (state) => state.leaderBoard,
     userId: (state) => state.userId,
     musicOn: (state) => state.musicOn,
   },
   mutations: {
     setGrid(state, grid) {
       state.grid = grid;
+    },
+    setLeaderBoard(state, leaderBoard) {
+      state.leaderBoard = leaderBoard;
     },
     setUserId(state, id) {
       Vue.set(state, 'userId', id);
@@ -129,7 +148,16 @@ export default new Vuex.Store({
           query: GRID_SUBSCRIPTION,
         }).subscribe({
           next({ data }) {
-            commit('setGrid', data.renderUpdate);
+            commit('setGrid', data.renderUpdates);
+          },
+          error(err) { console.error('err', err); },
+        });
+
+        await statisticClient.subscribe({
+          query: LEADER_BOARD_SUBSCRIPTION,
+        }).subscribe({
+          next({ data }) {
+            commit('setLeaderBoard', data.leaderBoardUpdates.entries);
           },
           error(err) { console.error('err', err); },
         });
@@ -170,7 +198,6 @@ export default new Vuex.Store({
           },
         }).subscribe({
           next() {
-            console.log('dead');
             commit('unsubUser');
           },
           error(err) { console.error('err', err); },

@@ -1,0 +1,22 @@
+scalar DateTime
+
+type Query {
+  """ Subscribe to all grid updates. """
+  getLeaderBoard: LeaderBoard!
+}
+
+type Subscription {
+  """ Subscribe to all grid updates. """
+  leaderBoardUpdates: LeaderBoard!
+}
+
+type LeaderBoard {
+  entries: [PlayerEntrie]!
+}
+
+type PlayerEntrie {
+  title: String!
+  points: String!
+  sprite: String
+  color: String
+}
