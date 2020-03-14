@@ -15,7 +15,7 @@ module.exports = {
   DEFAULT_INVULNERABILITY_TIME: 100,
   DEFAULT_INVULNERABILITY_SPRITE: `${config.http}${config.host}:8080/invulnerable.png`,
   PLAYER_RADIUS: 1,
-  PLAYER_SPEED: 5,
+  PLAYER_SPEED: 3,
   PLAYER_RESET_FACTOR: 0.25,
   DEFAULT_PLAYER_SPRITE: `${config.http}${config.host}:8080/player.png`,
 }

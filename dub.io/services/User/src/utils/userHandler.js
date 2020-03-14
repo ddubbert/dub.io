@@ -30,6 +30,7 @@ const userEventsConsumer = kafka.consumer({ groupId: 'User-Events' })
 const users = {}
 const normalSprites = {}
 let pubsub = null
+let renderEmpty = false
 
 const createUser = async (data) => {
   const {
@@ -74,6 +75,7 @@ const deleteUser = (id) => {
     delete users[id]
     delete normalSprites[id]
     pubsub.publish(CHANNELS.USER_LOST_CHANNEL, { userLost: deletedUser })
+    renderEmpty = true
   }
 }
 
@@ -135,7 +137,8 @@ const createTopics = async () => {
 
 const startPublishing = () => {
   setInterval(async () => {
-    if (Object.keys(users).length > 0) {
+    if (Object.keys(users).length > 0 || renderEmpty) {
+      renderEmpty = false
       moveUsers()
 
       const nodes = getUserNodes()

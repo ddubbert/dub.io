@@ -39,30 +39,32 @@ let sounds = [];
 let animationInterval = null;
 
 let backgroundImage = null;
+let backgroundScratchSize = 1;
 
 const getBackgroundImage = () => {
   if (backgroundImage) return backgroundImage;
 
   const scratch = document.createElement('canvas');
-  scratch.width = canvasSize;
-  scratch.height = canvasSize;
+  scratch.width = backgroundScratchSize;
+  scratch.height = backgroundScratchSize;
 
   const scratchCTX = scratch.getContext('2d');
 
-  const lineDist = canvasSize / 100;
+  const lineThicknes = backgroundScratchSize / 1000;
+  const lineDist = lineThicknes * 10;
   const greaterDist = lineDist * 10;
 
-  const data = `<svg width="${canvasSize}" height="${canvasSize}" xmlns="http://www.w3.org/2000/svg"> \
+  const data = `<svg width="${backgroundScratchSize}" height="${backgroundScratchSize}" xmlns="http://www.w3.org/2000/svg"> \
       <defs> \
           <pattern id="smallGrid" width="${lineDist}" height="${lineDist}" patternUnits="userSpaceOnUse"> \
-              <path d="M ${lineDist} 0 L 0 0 0 ${lineDist}" fill="none" stroke="black" stroke-width="0.1" /> \
+              <path d="M ${lineDist} 0 L 0 0 0 ${lineDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes / 20}" /> \
           </pattern> \
           <pattern id="grid" width="${greaterDist}" height="${greaterDist}" patternUnits="userSpaceOnUse"> \
               <rect width="${greaterDist}" height="${greaterDist}" fill="url(#smallGrid)" />
-              <path d="M ${greaterDist} 0 L 0 0 0 ${greaterDist}" fill="none" stroke="black" stroke-width="0.5" /> \
+              <path d="M ${greaterDist} 0 L 0 0 0 ${greaterDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes}" /> \
           </pattern> \
       </defs> \
-      <rect width="${canvasSize}" height="${canvasSize}" fill="url(#grid)" /> \
+      <rect width="${backgroundScratchSize}" height="${backgroundScratchSize}" fill="url(#grid)" /> \
   </svg>`;
 
   const DOMURL = window.URL || window.webkitURL || window;
@@ -73,17 +75,17 @@ const getBackgroundImage = () => {
 
   img.onload = () => {
     scratchCTX.save();
-    scratchCTX.lineWidth = 5;
+    scratchCTX.lineWidth = lineThicknes * 5;
     scratch.strokeStyle = 'rgb(255,0,0)';
     scratchCTX.beginPath();
     scratchCTX.moveTo(0, 0);
-    scratchCTX.lineTo(canvasSize, 0);
-    scratchCTX.lineTo(canvasSize, canvasSize);
-    scratchCTX.lineTo(0, canvasSize);
+    scratchCTX.lineTo(backgroundScratchSize, 0);
+    scratchCTX.lineTo(backgroundScratchSize, backgroundScratchSize);
+    scratchCTX.lineTo(0, backgroundScratchSize);
     scratchCTX.lineTo(0, 0);
+    scratchCTX.drawImage(img, 0, 0, backgroundScratchSize, backgroundScratchSize);
     scratchCTX.stroke();
     scratchCTX.restore();
-    scratchCTX.drawImage(img, 0, 0);
     DOMURL.revokeObjectURL(url);
 
     backgroundImage = scratch;
@@ -93,7 +95,17 @@ const getBackgroundImage = () => {
 };
 const drawBackground = () => {
   if (canvasSize > 1 && backgroundCTX) {
-    backgroundCTX.drawImage(getBackgroundImage(), 0, 0, canvasSize, canvasSize);
+    backgroundCTX.drawImage(
+      getBackgroundImage(),
+      0,
+      0,
+      backgroundScratchSize,
+      backgroundScratchSize,
+      0,
+      0,
+      canvasSize,
+      canvasSize,
+    );
   }
 };
 
@@ -155,6 +167,7 @@ const setCanvasScaling = () => {
 const setCanvasSize = (size) => {
   canvasSize = size;
   canvasCenter = size / 2;
+  backgroundScratchSize = canvasSize * 5;
   playerBoardSize = canvasSize * PLAYER_SIZE_FACTOR_ON_BOARD;
   setCanvasScaling();
   drawBackground();
