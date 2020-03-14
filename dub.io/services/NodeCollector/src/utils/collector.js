@@ -10,7 +10,6 @@ const config = require('../../../../config')
 const gameOptions = require('../../../../gameOptions')
 
 const nodes = {}
-let changed = false
 
 const nodePositions = avro.Type.forSchema(nodePositionsSchema)
 const gridPositions = avro.Type.forSchema(gridPositionsSchema)
@@ -72,24 +71,6 @@ const createGrid = () => {
   }
 }
 
-const startPublishing = () => {
-  setInterval(async () => {
-    if (Object.keys(nodes).length > 0 && changed) {
-      const message = gridPositions.toBuffer(createGrid())
-
-      await gridProducer.send({
-        topic: config.gridTopic,
-        messages: [{
-          value: message,
-        }],
-        acks: 0,
-      })
-
-      changed = false
-    }
-  }, 1000 / gameOptions.FPS)
-}
-
 const createTopics = async () => {
   const topicsToCreate = [{
     topic: config.nodeTopic,
@@ -124,7 +105,16 @@ const startConsumer = async () => {
     eachMessage: async (event) => {
       const message = nodePositions.fromBuffer(event.message.value)
       nodes[message.type] = message.nodes
-      changed = true
+
+      const gridMessage = gridPositions.toBuffer(createGrid())
+
+      await gridProducer.send({
+        topic: config.gridTopic,
+        messages: [{
+          value: gridMessage,
+        }],
+        acks: 0,
+      })
     },
   })
 }
@@ -135,10 +125,8 @@ const startProducer = async () => {
 
 const run = async () => {
   await createTopics()
-  await startConsumer()
   await startProducer()
-
-  startPublishing()
+  await startConsumer()
 }
 
 const errorTypes = ['unhandledRejection', 'uncaughtException']

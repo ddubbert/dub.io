@@ -103,6 +103,8 @@ const CREATE_USER_MUTATION = gql`
 Vue.use(Vuex);
 
 let userSub = null;
+let count = 0;
+let startTime = null;
 
 export default new Vuex.Store({
   state: {
@@ -148,6 +150,7 @@ export default new Vuex.Store({
           query: GRID_SUBSCRIPTION,
         }).subscribe({
           next({ data }) {
+            count += 1;
             commit('setGrid', data.renderUpdates);
           },
           error(err) { console.error('err', err); },
@@ -188,6 +191,14 @@ export default new Vuex.Store({
             position: { x: 50, y: 50 },
           },
         });
+
+        if (startTime) {
+          const diff = new Date().getTime() - startTime;
+          const seconds = diff / 1000;
+          console.log(count / seconds);
+        }
+        startTime = new Date().getTime();
+        count = 0;
 
         commit('setUserId', result.data.createUser.id);
 

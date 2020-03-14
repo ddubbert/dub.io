@@ -156,7 +156,7 @@ const startPublishing = () => {
         acks: 0,
       })
     }
-  }, 1000 / gameOptions.FPS)
+  }, 1000 / (gameOptions.FPS * 1.1))
 }
 
 const processCollision = (node1, node2) => {

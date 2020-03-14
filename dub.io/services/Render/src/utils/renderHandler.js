@@ -42,16 +42,7 @@ const createTopics = async () => {
   await admin.disconnect()
 }
 
-const startPublishing = (pubsub) => {
-  setInterval(async () => {
-    if (grid && changed) {
-      pubsub.publish(CHANNELS.RENDER_UPDATE_CHANNEL, { renderUpdates: grid })
-      changed = false
-    }
-  }, 1000 / gameOptions.FPS)
-}
-
-const startConsumer = async () => {
+const startConsumer = async (pubsub) => {
   await gridConsumer.connect()
 
   await gridConsumer.subscribe({ topic: config.gridTopic, fromBeginning: false })
@@ -60,6 +51,7 @@ const startConsumer = async () => {
     eachMessage: async (event) => {
       const message = gridPositions.fromBuffer(event.message.value)
       grid = message
+      pubsub.publish(CHANNELS.RENDER_UPDATE_CHANNEL, { renderUpdates: grid })
       changed = true
     },
   })
@@ -67,9 +59,7 @@ const startConsumer = async () => {
 
 const run = async (pubsub) => {
   await createTopics()
-  await startConsumer()
-
-  startPublishing(pubsub)
+  await startConsumer(pubsub)
 }
 
 module.exports = {
