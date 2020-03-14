@@ -35,10 +35,9 @@
               <v-col align="center" justify="center">
                 <v-color-picker
                   v-model="color"
+                  mode="rgba"
                   hide-canvas
-                  mode="hexa"
-                  hide-mode-switch
-                  class="no-alpha"
+                  flat
                 ></v-color-picker>
               </v-col>
             </v-row>
@@ -50,8 +49,8 @@
                   label="Sprite-URI"
                   v-model="sprite"
                 >
-                  <template v-slot:append>
-                    <v-btn small dark @click="resetSprite">
+                  <template v-slot:append-outer>
+                    <v-btn dark small @click="resetSprite">
                       <v-icon dark>mdi-undo-variant</v-icon>
                     </v-btn>
                   </template>
