@@ -5,6 +5,7 @@ const uniqid = require('uniqid')
 
 const NODE_TYPES = require('../../../../NodeTypes')
 const USER_EVENTS = require('../../../../UserEvents')
+const ITEM_TYPES = require('../utils/enums/ItemTypes')
 
 const nodePositionsSchema = require('../../../avro_schemas/NodePositions')
 const collisionSchema = require('../../../avro_schemas/Collisions')
@@ -12,81 +13,109 @@ const userEventsSchema = require('../../../avro_schemas/UserEvents')
 const config = require('../../../../config')
 const gameOptions = require('../../../../gameOptions')
 
-const food = {}
+const items = {}
 
 const nodePositions = avro.Type.forSchema(nodePositionsSchema)
 const collision = avro.Type.forSchema(collisionSchema)
 const userEvents = avro.Type.forSchema(userEventsSchema)
 
 const kafka = new Kafka({
-  clientId: 'Food-Service',
+  clientId: 'Item-Service',
   brokers: [`${config.kafkaHost}:${config.kafkaPort}`],
 })
 const admin = kafka.admin()
 const producer = kafka.producer()
-const collisionConsumer = kafka.consumer({ groupId: 'Food-Collisions' })
+const collisionConsumer = kafka.consumer({ groupId: 'Item-Collisions' })
 
-const addFoodAtRandomPosition = () => {
-  const max = gameOptions.GRID_SIZE - 1 - gameOptions.FOOD_RADIUS * 10
-  const min = gameOptions.FOOD_RADIUS * 10
+const addRandomItemAtRandomPosition = () => {
+  const max = gameOptions.GRID_SIZE - 1 - gameOptions.ITEM_RADIUS * 5
+  const min = gameOptions.ITEM_RADIUS * 5
 
   const position = {
     x: Math.max(Math.random() * max, min),
     y: Math.max(Math.random() * max, min),
   }
 
-  const f = {
+  const typeAmount = Object.keys(ITEM_TYPES).length
+  const randomIndex = Math.ceil(Math.random() * (typeAmount)) - 1
+  const itemType = ITEM_TYPES[Object.keys(ITEM_TYPES)[randomIndex]]
+
+  const item = {
     id: uniqid(),
-    type: NODE_TYPES.FOOD,
+    type: NODE_TYPES.ITEM,
     createdAt: new Date().getTime(),
-    title: NODE_TYPES.FOOD,
+    title: itemType,
     position,
-    radius: gameOptions.FOOD_RADIUS,
-    sprite: gameOptions.DEFAULT_FOOD_SPRITE,
-    color: 'rgb(255,255,255)',
+    radius: gameOptions.ITEM_RADIUS,
+    sprite: itemType,
+    color: 'rgb(0,0,0)',
   }
 
-  food[f.id] = f
+  items[item.id] = item
 }
 
-const generateFood = () => {
-  const array = [...Array(gameOptions.FOOD_NODE_AMOUNT).keys()]
+const generateItems = () => {
+  const array = [...Array(gameOptions.ITEM_NODE_AMOUNT).keys()]
   array.forEach(() => {
-    addFoodAtRandomPosition()
+    addRandomItemAtRandomPosition()
   })
 }
 
 const getNodes = () => {
-  const nodes = Object.keys(food).map((id) => food[id])
+  const nodes = Object.keys(items).map((id) => items[id])
 
   return {
-    type: NODE_TYPES.FOOD,
+    type: NODE_TYPES.ITEM,
     nodes,
   }
 }
 
-const publishUserEvent = async (playerNode, foodNode) => {
+const publishUserEvent = async (playerNode, itemNode) => {
   try {
-    const message = userEvents.toBuffer({
-      user: playerNode,
-      event: USER_EVENTS.GROW,
-      value: gameOptions.GROW_FACTOR * foodNode.radius,
-      activeTime: null,
-    })
+    let event = null
+    let value = null
+    let activeTime = null
 
-    await producer.send({
-      topic: config.userEventsTopic,
-      messages: [{
-        value: message,
-      }],
-      acks: 0,
-    })
+    switch (itemNode.title) {
+      case ITEM_TYPES.SPEEDUP:
+        event = USER_EVENTS.SPEED_UP
+        value = gameOptions.DEFAULT_SPEEDUP_FACTOR
+        activeTime = gameOptions.DEFAULT_ITEM_ACTIVE_TIME
+        break
+      case ITEM_TYPES.INVULNERABLE:
+        event = USER_EVENTS.INVULNERABLE
+        activeTime = gameOptions.DEFAULT_ITEM_ACTIVE_TIME * 0.5
+        break
+      case ITEM_TYPES.GROWUP:
+        event = USER_EVENTS.GROW_UP
+        value = gameOptions.DEFAULT_GROWUP_FACTOR
+        activeTime = gameOptions.DEFAULT_ITEM_ACTIVE_TIME
+        break
+      default:
+    }
+
+    if (event) {
+      const message = userEvents.toBuffer({
+        user: playerNode,
+        event,
+        value,
+        activeTime,
+      })
+
+      await producer.send({
+        topic: config.userEventsTopic,
+        messages: [{
+          value: message,
+        }],
+        acks: 0,
+      })
+    }
   } catch (e) {
     console.error(e)
   }
 }
 
-const publishFood = async () => {
+const publishItems = async () => {
   try {
     const message = nodePositions.toBuffer(getNodes())
     await producer.send({
@@ -102,9 +131,9 @@ const publishFood = async () => {
 }
 
 const startPublishing = async () => {
-  generateFood()
+  generateItems()
 
-  publishFood()
+  publishItems()
 }
 
 const createTopics = async () => {
@@ -135,12 +164,12 @@ const createTopics = async () => {
   await admin.disconnect()
 }
 
-const processCollision = (playerNode, foodNode) => {
-  if (food[foodNode.id]) {
-    delete food[foodNode.id]
-    publishUserEvent(playerNode, foodNode)
-    addFoodAtRandomPosition()
-    publishFood()
+const processCollision = (playerNode, itemNode) => {
+  if (items[itemNode.id]) {
+    delete items[itemNode.id]
+    publishUserEvent(playerNode, itemNode)
+    addRandomItemAtRandomPosition()
+    publishItems()
   }
 }
 
@@ -153,7 +182,7 @@ const startConsumer = async () => {
     eachMessage: async (event) => {
       const message = collision.fromBuffer(event.message.value)
       if (message.nodes[0].type === NODE_TYPES.PLAYER
-        && message.nodes[1].type === NODE_TYPES.FOOD) {
+        && message.nodes[1].type === NODE_TYPES.ITEM) {
         processCollision(message.nodes[0], message.nodes[1])
       }
     },
@@ -180,7 +209,7 @@ errorTypes.forEach((type) => {
     try {
       console.log(`process.on ${type}`)
       console.error(e)
-      await collisionConsumer.disconnect()
+      // await nodeConsumer.disconnect()
       await producer.disconnect()
       process.exit(0)
     } catch (_) {
@@ -192,7 +221,7 @@ errorTypes.forEach((type) => {
 signalTraps.forEach((type) => {
   process.once(type, async () => {
     try {
-      await collisionConsumer.disconnect()
+      // await nodeConsumer.disconnect()
       await producer.disconnect()
     } finally {
       process.kill(process.pid, type)

@@ -40,7 +40,8 @@ const publishUserEvent = async (playerNode) => {
     const message = userEvents.toBuffer({
       user: playerNode,
       event: USER_EVENTS.INVULNERABLE,
-      value: gameOptions.DEFAULT_INVULNERABILITY_TIME,
+      value: null,
+      activeTime: gameOptions.DEFAULT_INVULNERABILITY_TIME,
     })
 
     await producer.send({

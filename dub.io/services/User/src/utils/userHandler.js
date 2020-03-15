@@ -59,6 +59,7 @@ const createUser = async (data) => {
     direction: DIRECTIONS.RIGHT,
     invulnerable: false,
     invulnerabilityTimeout: null,
+    growFactor: 1,
   }
 
   return users[id]
@@ -197,28 +198,60 @@ const startCollisionsConsumer = async () => {
   })
 }
 
+const setInvulnerable = (uId, userEvent) => {
+  users[uId].invulnerable = true
+  users[uId].sprite = gameOptions.DEFAULT_INVULNERABILITY_SPRITE
+
+
+  clearTimeout(users[uId].invulnerabilityTimeout)
+  users[uId].invulnerabilityTimeout = setTimeout(() => {
+    if (users[uId]) {
+      users[uId].invulnerable = false
+      users[uId].sprite = normalSprites[uId]
+    }
+  }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
+}
+
+const setSpeedUp = (uId, userEvent) => {
+  const speedUp = userEvent.value || gameOptions.DEFAULT_SPEEDUP_FACTOR
+  users[uId].speed *= speedUp
+
+  setTimeout(() => {
+    if (users[uId]) {
+      users[uId].speed /= speedUp
+    }
+  }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
+}
+
+const setGrowUp = (uId, userEvent) => {
+  const growUp = userEvent.value || gameOptions.DEFAULT_GROWUP_FACTOR
+  users[uId].growFactor *= growUp
+
+  setTimeout(() => {
+    if (users[uId]) {
+      users[uId].growFactor /= growUp
+    }
+  }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
+}
+
 const processUserEvent = (userEvent) => {
   const uId = userEvent.user.id
 
   switch (userEvent.event) {
     case USER_EVENTS.GROW:
-      if (userEvent.value) users[uId].radius += userEvent.value
+      if (userEvent.value) users[uId].radius += userEvent.value * users[uId].growFactor
       break
     case USER_EVENTS.DESTROY:
       deleteUser(uId)
       break
     case USER_EVENTS.INVULNERABLE:
-      users[uId].invulnerable = true
-      users[uId].sprite = gameOptions.DEFAULT_INVULNERABILITY_SPRITE
-
-
-      clearTimeout(users[uId].invulnerabilityTimeout)
-      users[uId].invulnerabilityTimeout = setTimeout(() => {
-        if (users[uId]) {
-          users[uId].invulnerable = false
-          users[uId].sprite = normalSprites[uId]
-        }
-      }, userEvent.value || gameOptions.DEFAULT_INVULNERABILITY_TIME)
+      setInvulnerable(uId, userEvent)
+      break
+    case USER_EVENTS.SPEED_UP:
+      setSpeedUp(uId, userEvent)
+      break
+    case USER_EVENTS.GROW_UP:
+      setGrowUp(uId, userEvent)
       break
     default:
   }

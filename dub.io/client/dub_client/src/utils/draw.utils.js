@@ -57,11 +57,11 @@ const getBackgroundImage = () => {
   const data = `<svg width="${backgroundScratchSize}" height="${backgroundScratchSize}" xmlns="http://www.w3.org/2000/svg"> \
       <defs> \
           <pattern id="smallGrid" width="${lineDist}" height="${lineDist}" patternUnits="userSpaceOnUse"> \
-              <path d="M ${lineDist} 0 L 0 0 0 ${lineDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes / 20}" /> \
+              <path d="M ${lineDist} 0 L 0 0 0 ${lineDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes / 10}" /> \
           </pattern> \
           <pattern id="grid" width="${greaterDist}" height="${greaterDist}" patternUnits="userSpaceOnUse"> \
               <rect width="${greaterDist}" height="${greaterDist}" fill="url(#smallGrid)" />
-              <path d="M ${greaterDist} 0 L 0 0 0 ${greaterDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes}" /> \
+              <path d="M ${greaterDist} 0 L 0 0 0 ${greaterDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes * 2}" /> \
           </pattern> \
       </defs> \
       <rect width="${backgroundScratchSize}" height="${backgroundScratchSize}" fill="url(#grid)" /> \
@@ -75,7 +75,7 @@ const getBackgroundImage = () => {
 
   img.onload = () => {
     scratchCTX.save();
-    scratchCTX.lineWidth = lineThicknes * 5;
+    scratchCTX.lineWidth = lineThicknes * 10;
     scratch.strokeStyle = 'rgb(255,0,0)';
     scratchCTX.beginPath();
     scratchCTX.moveTo(0, 0);
@@ -167,7 +167,7 @@ const setCanvasScaling = () => {
 const setCanvasSize = (size) => {
   canvasSize = size;
   canvasCenter = size / 2;
-  backgroundScratchSize = canvasSize * 5;
+  backgroundScratchSize = canvasSize * 4;
   playerBoardSize = canvasSize * PLAYER_SIZE_FACTOR_ON_BOARD;
   setCanvasScaling();
   drawBackground();

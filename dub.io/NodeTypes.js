@@ -3,4 +3,5 @@ module.exports = Object.freeze({
   FOOD: 'FOOD',
   OBSTACLE: 'OBSTACLE',
   BOUNDARIES: 'BOUNDARIES',
+  ITEM: 'ITEM',
 })
