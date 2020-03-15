@@ -5,9 +5,7 @@ import config from '../../../../config';
 
 import graphqlClient from '../utils/graphql.utils';
 
-const renderClient = graphqlClient(`${config.http}${config.host}:3002/graphql`, `${config.ws}${config.host}:3002/subscriptions`);
-const userClient = graphqlClient(`${config.http}${config.host}:3001/graphql`, `${config.ws}${config.host}:3001/subscriptions`);
-const statisticClient = graphqlClient(`${config.http}${config.host}:3007/graphql`, `${config.ws}${config.host}:3007/subscriptions`);
+const client = graphqlClient(`${config.http}${config.host}:3000/graphql`, `${config.ws}${config.host}:3000/subscriptions`);
 
 const GRID_SUBSCRIPTION = gql`
   subscription update {
@@ -152,7 +150,7 @@ export default new Vuex.Store({
   actions: {
     async subscribe({ commit }) {
       try {
-        await renderClient.subscribe({
+        await client.subscribe({
           query: GRID_SUBSCRIPTION,
         }).subscribe({
           next({ data }) {
@@ -162,7 +160,7 @@ export default new Vuex.Store({
           error(err) { console.error('err', err); },
         });
 
-        await statisticClient.subscribe({
+        await client.subscribe({
           query: LEADER_BOARD_SUBSCRIPTION,
         }).subscribe({
           next({ data }) {
@@ -176,7 +174,7 @@ export default new Vuex.Store({
     },
     async changeDirection({ getters }, direction) {
       try {
-        await userClient.mutate({
+        await client.mutate({
           mutation: DIRECTION_MUTATION,
           variables: { userId: getters.userId, direction },
         });
@@ -188,7 +186,7 @@ export default new Vuex.Store({
       try {
         if (state.userId) commit('unsubUser');
 
-        const result = await userClient.mutate({
+        const result = await client.mutate({
           mutation: CREATE_USER_MUTATION,
           variables: {
             title,
@@ -208,7 +206,7 @@ export default new Vuex.Store({
 
         commit('setUserId', result.data.createUser.id);
 
-        userSub = await userClient.subscribe({
+        userSub = await client.subscribe({
           query: USER_LOST_SUBSCRIPTION,
           variables: {
             userId: result.data.createUser.id,

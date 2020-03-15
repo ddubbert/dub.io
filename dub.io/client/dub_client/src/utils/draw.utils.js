@@ -41,9 +41,7 @@ let animationInterval = null;
 let backgroundImage = null;
 let backgroundScratchSize = 1;
 
-const getBackgroundImage = () => {
-  if (backgroundImage) return backgroundImage;
-
+const createBackgroundImage = () => {
   const scratch = document.createElement('canvas');
   scratch.width = backgroundScratchSize;
   scratch.height = backgroundScratchSize;
@@ -87,12 +85,17 @@ const getBackgroundImage = () => {
     scratchCTX.stroke();
     scratchCTX.restore();
     DOMURL.revokeObjectURL(url);
-
-    backgroundImage = scratch;
   };
+
   img.src = url;
-  return scratch;
+  backgroundImage = scratch;
 };
+
+const getBackgroundImage = () => {
+  if (!backgroundImage) createBackgroundImage();
+  return backgroundImage;
+};
+
 const drawBackground = () => {
   if (canvasSize > 1 && backgroundCTX) {
     backgroundCTX.drawImage(
@@ -164,12 +167,19 @@ const setCanvasScaling = () => {
   canvasScaling = canvasSize / gameOptions.GRID_SIZE;
 };
 
+let drawTimeout = null;
 const setCanvasSize = (size) => {
   canvasSize = size;
   canvasCenter = size / 2;
   backgroundScratchSize = canvasSize * 4;
   playerBoardSize = canvasSize * PLAYER_SIZE_FACTOR_ON_BOARD;
   setCanvasScaling();
+
+  clearTimeout(drawTimeout);
+  drawTimeout = setTimeout(() => {
+    createBackgroundImage();
+  }, 50);
+
   drawBackground();
 };
 
