@@ -112,12 +112,14 @@ export default new Vuex.Store({
     leaderBoard: [],
     userId: '',
     musicOn: false,
+    userStartPosition: { x: 50, y: 50 },
   },
   getters: {
     grid: (state) => state.grid,
     leaderBoard: (state) => state.leaderBoard,
     userId: (state) => state.userId,
     musicOn: (state) => state.musicOn,
+    userStartPosition: (state) => state.userStartPosition,
   },
   mutations: {
     setGrid(state, grid) {
@@ -131,6 +133,10 @@ export default new Vuex.Store({
     },
     setMusic(state, bool) {
       Vue.set(state, 'musicOn', bool);
+    },
+    setUserStartPosition(state, position) {
+      state.userStartPosition.x = position.x;
+      state.userStartPosition.y = position.y;
     },
     unsubUser(state) {
       if (state.userId) {
@@ -188,7 +194,7 @@ export default new Vuex.Store({
             title,
             color,
             sprite,
-            position: { x: 50, y: 50 },
+            position: state.userStartPosition,
           },
         });
 
@@ -219,6 +225,9 @@ export default new Vuex.Store({
     },
     switchMusic({ commit }, bool) {
       commit('setMusic', bool);
+    },
+    newUserStartPosition({ commit }, position) {
+      commit('setUserStartPosition', position);
     },
   },
   modules: {

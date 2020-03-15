@@ -67,6 +67,7 @@
                   label="Username"
                   placeholder="RandomPlayer"
                   v-model="username"
+                  :disabled="isUserActive"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -78,6 +79,7 @@
                   mode="rgba"
                   hide-canvas
                   flat
+                  :disabled="isUserActive"
                 ></v-color-picker>
               </v-col>
             </v-row>
@@ -88,9 +90,15 @@
                 <v-text-field
                   label="Sprite-URI"
                   v-model="sprite"
+                  :disabled="isUserActive"
                 >
                   <template v-slot:append-outer>
-                    <v-btn dark small @click="resetSprite">
+                    <v-btn
+                      dark
+                      small
+                      @click="resetSprite"
+                      :disabled="isUserActive"
+                    >
                       <v-icon dark>mdi-undo-variant</v-icon>
                     </v-btn>
                   </template>
@@ -104,7 +112,13 @@
           <v-col cols="3" />
           <v-col cols="6" align="center" justify="center">
             <v-row align="center" justify="center">
-              <v-btn dark large color="teal" @click="createUser">
+              <v-btn
+                dark
+                large
+                color="teal"
+                @click="createUser"
+                :disabled="isUserActive"
+              >
                 Add Player
               </v-btn>
             </v-row>
@@ -121,19 +135,31 @@
 
         <v-row align="center" justify="center">
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.UPLEFT);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.UPLEFT);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-top-left-bold-outline</v-icon>
             </v-btn>
           </v-col>
 
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.UP);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.UP);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-up-bold-outline</v-icon>
             </v-btn>
           </v-col>
 
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.UPRIGHT);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.UPRIGHT);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-top-right-bold-outline</v-icon>
             </v-btn>
           </v-col>
@@ -141,7 +167,11 @@
 
         <v-row align="center" justify="center">
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.LEFT);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.LEFT);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-left-bold-outline</v-icon>
             </v-btn>
           </v-col>
@@ -152,7 +182,11 @@
           </v-col>
 
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.RIGHT);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.RIGHT);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-right-bold-outline</v-icon>
             </v-btn>
           </v-col>
@@ -160,19 +194,31 @@
 
         <v-row align="center" justify="center">
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.DOWNLEFT);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.DOWNLEFT);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-bottom-left-bold-outline</v-icon>
             </v-btn>
           </v-col>
 
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.DOWN);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.DOWN);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-down-bold-outline</v-icon>
             </v-btn>
           </v-col>
 
           <v-col cols="4" align="center" justify="center">
-            <v-btn dark @click="$store.dispatch('changeDirection', DIRECTIONS.DOWNRIGHT);">
+            <v-btn
+              :dark="isUserActive"
+              @click="$store.dispatch('changeDirection', DIRECTIONS.DOWNRIGHT);"
+              :disabled="!isUserActive"
+            >
               <v-icon dark>mdi-arrow-bottom-right-bold-outline</v-icon>
             </v-btn>
           </v-col>
@@ -201,6 +247,7 @@ export default {
       color: '#FF0000FF',
       musicSwitch: false,
       DIRECTIONS,
+      isUserActive: false,
     };
   },
 
@@ -221,6 +268,15 @@ export default {
     musicSwitch(newValue) {
       this.$store.dispatch('switchMusic', newValue);
     },
+  },
+
+  created() {
+    this.$store.watch(
+      (state, getters) => getters.userId,
+      (newValue) => {
+        this.isUserActive = !!newValue;
+      },
+    );
   },
 
   mounted() {
