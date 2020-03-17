@@ -5,6 +5,7 @@ const uniqid = require('uniqid')
 
 const NODE_TYPES = require('../../../../NodeTypes')
 const USER_EVENTS = require('../../../../UserEvents')
+const OBSTACLE_TYPES = require('./enums/ObstacleTypes')
 
 const nodePositionsSchema = require('../../../avro_schemas/NodePositions')
 const collisionSchema = require('../../../avro_schemas/Collisions')
@@ -13,6 +14,8 @@ const config = require('../../../../config')
 const gameOptions = require('../../../../gameOptions')
 
 const obstacles = {}
+const userWarpCollisions = {}
+const userVirusCollisions = {}
 
 const nodePositions = avro.Type.forSchema(nodePositionsSchema)
 const collision = avro.Type.forSchema(collisionSchema)
@@ -35,22 +38,67 @@ const getNodes = () => {
   }
 }
 
-const publishUserEvent = async (playerNode) => {
-  try {
-    const message = userEvents.toBuffer({
+const publishWarpCollision = async (playerNode) => {
+  if (!userWarpCollisions[playerNode.id]) {
+    userWarpCollisions[playerNode.id] = 'test'
+    userWarpCollisions[playerNode.id] = setTimeout(() => {
+      delete userWarpCollisions[playerNode.id]
+    }, 1000)
+
+    const resetMessage = userEvents.toBuffer({
       userId: playerNode.id,
-      event: USER_EVENTS.INVULNERABLE,
+      event: USER_EVENTS.POSITION_RESET,
       value: null,
-      activeTime: gameOptions.DEFAULT_INVULNERABILITY_TIME,
+      activeTime: null,
     })
 
     await producer.send({
       topic: config.userEventsTopic,
       messages: [{
-        value: message,
+        value: resetMessage,
       }],
       acks: 1,
     })
+  }
+}
+
+const publishVirusCollision = async (playerNode) => {
+  if (!userVirusCollisions[playerNode.id]) {
+    userVirusCollisions[playerNode.id] = 'test'
+    userVirusCollisions[playerNode.id] = setTimeout(() => {
+      delete userVirusCollisions[playerNode.id]
+    }, 1000)
+
+    await publishWarpCollision(playerNode)
+
+    const growMessage = userEvents.toBuffer({
+      userId: playerNode.id,
+      event: USER_EVENTS.GROW,
+      value: -(playerNode.radius / 2),
+      activeTime: null,
+    })
+
+    await producer.send({
+      topic: config.userEventsTopic,
+      messages: [{
+        value: growMessage,
+      }],
+      acks: 1,
+    })
+  }
+}
+
+const publishUserEvent = async (playerNode, obstacleNode) => {
+  try {
+    switch (obstacleNode.title) {
+      case OBSTACLE_TYPES.VIRUS:
+        if (playerNode.radius > obstacleNode.radius) await publishVirusCollision(playerNode)
+        break
+      case OBSTACLE_TYPES.WARP:
+        await publishWarpCollision(playerNode)
+        break
+      default:
+    }
   } catch (e) {
     console.error(e)
   }
@@ -71,7 +119,21 @@ const publishObstacles = async () => {
   }
 }
 
-const addObstacleRandomlyBetweenPositions = (x1, y1, x2, y2) => {
+const addWarp = (x, y) => {
+  const warp = {
+    id: uniqid(),
+    type: NODE_TYPES.OBSTACLE,
+    title: OBSTACLE_TYPES.WARP,
+    position: { x, y },
+    radius: gameOptions.OBSTACLE_MIN_RADIUS,
+    sprite: gameOptions.DEFAULT_WARP_SPRITE,
+    color: 'rgba(0,0,0,0)',
+  }
+
+  obstacles[warp.id] = warp
+}
+
+const addVirusRandomlyBetweenPositions = (x1, y1, x2, y2) => {
   const distX = x2 - x1
   const distY = y2 - y1
   const diffRadius = gameOptions.OBSTACLE_MAX_RADIUS - gameOptions.OBSTACLE_MIN_RADIUS
@@ -83,11 +145,11 @@ const addObstacleRandomlyBetweenPositions = (x1, y1, x2, y2) => {
   const obstacle = {
     id: uniqid(),
     type: NODE_TYPES.OBSTACLE,
-    title: NODE_TYPES.OBSTACLE,
+    title: OBSTACLE_TYPES.VIRUS,
     position: { x, y },
     radius,
-    sprite: gameOptions.DEFAULT_OBSTACLE_SPRITE,
-    color: 'rgba(0,255,0,0.5)',
+    sprite: gameOptions.DEFAULT_VIRUS_SPRITE,
+    color: 'rgba(0,0,0,0)',
   }
 
   obstacles[obstacle.id] = obstacle
@@ -96,38 +158,58 @@ const addObstacleRandomlyBetweenPositions = (x1, y1, x2, y2) => {
 
   setTimeout(() => {
     delete obstacles[obstacle.id]
-    addObstacleRandomlyBetweenPositions(x1, y1, x2, y2)
+    addVirusRandomlyBetweenPositions(x1, y1, x2, y2)
     publishObstacles()
   }, gameOptions.OBSTACLE_MIN_LIFE_TIME + Math.random() * diffTime)
 }
 
 const generateObstacles = () => {
-  addObstacleRandomlyBetweenPositions(
-    0 + gameOptions.OBSTACLE_MAX_RADIUS,
-    0 + gameOptions.OBSTACLE_MAX_RADIUS,
+  addVirusRandomlyBetweenPositions(
+    gameOptions.OBSTACLE_MAX_RADIUS,
+    gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
   )
 
-  addObstacleRandomlyBetweenPositions(
+  addVirusRandomlyBetweenPositions(
     gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
-    0 + gameOptions.OBSTACLE_MAX_RADIUS,
+    gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
   )
 
-  addObstacleRandomlyBetweenPositions(
-    0 + gameOptions.OBSTACLE_MAX_RADIUS,
+  addVirusRandomlyBetweenPositions(
+    gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
   )
 
-  addObstacleRandomlyBetweenPositions(
+  addVirusRandomlyBetweenPositions(
     gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
     gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
+  )
+
+  addWarp(
+    gameOptions.OBSTACLE_MIN_RADIUS + 1,
+    gameOptions.OBSTACLE_MIN_RADIUS + 1,
+  )
+
+  addWarp(
+    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
+    gameOptions.OBSTACLE_MIN_RADIUS + 1,
+  )
+
+  addWarp(
+    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
+    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
+  )
+
+  addWarp(
+    gameOptions.OBSTACLE_MIN_RADIUS + 1,
+    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
   )
 }
 
@@ -166,8 +248,8 @@ const createTopics = async () => {
 }
 
 const processCollision = (playerNode, obstacleNode) => {
-  if (obstacles[obstacleNode.id] && playerNode.radius < obstacleNode.radius) {
-    publishUserEvent(playerNode)
+  if (obstacles[obstacleNode.id]) {
+    publishUserEvent(playerNode, obstacleNode)
   }
 }
 

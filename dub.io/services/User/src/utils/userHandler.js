@@ -162,28 +162,79 @@ const startPublishing = () => {
   }, 1000 / (gameOptions.FPS * 1.1))
 }
 
+const setInvulnerable = (uId, userEvent) => {
+  if (users[uId]) {
+    users[uId].invulnerable = true
+    users[uId].sprite = gameOptions.DEFAULT_INVULNERABILITY_SPRITE
+
+
+    clearTimeout(users[uId].invulnerabilityTimeout)
+    users[uId].invulnerabilityTimeout = setTimeout(() => {
+      if (users[uId]) {
+        users[uId].invulnerable = false
+        users[uId].sprite = normalSprites[uId]
+      }
+    }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
+  }
+}
+
+const setSpeedUp = (uId, userEvent) => {
+  if (users[uId]) {
+    const speedUp = userEvent.value || gameOptions.DEFAULT_SPEEDUP_FACTOR
+    users[uId].speed *= speedUp
+
+    setTimeout(() => {
+      if (users[uId]) {
+        users[uId].speed /= speedUp
+      }
+    }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
+  }
+}
+
+const setGrowUp = (uId, userEvent) => {
+  if (users[uId]) {
+    const growUp = userEvent.value || gameOptions.DEFAULT_GROWUP_FACTOR
+    users[uId].growFactor *= growUp
+
+    setTimeout(() => {
+      if (users[uId]) {
+        users[uId].growFactor /= growUp
+      }
+    }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
+  }
+}
+
+const resetUserPosition = (uId) => {
+  if (users[uId]) {
+    users[uId].position.x = gameOptions.GRID_SIZE / 2
+    users[uId].position.y = gameOptions.GRID_SIZE / 2
+  }
+}
+
 const processCollision = (node1, node2) => {
   if (node2.type === NODE_TYPES.BOUNDARIES) {
     if (!userBoundarieHits[node1.id]) {
+      userBoundarieHits[node1.id] = 'test'
       const newRadius = users[node1.id].radius * gameOptions.PLAYER_RESET_FACTOR
 
       if (newRadius < gameOptions.PLAYER_RADIUS) deleteUser(node1.id)
       else users[node1.id].radius = newRadius
 
+      resetUserPosition(node1.id)
+
       userBoundarieHits[node1.id] = setTimeout(() => {
         delete userBoundarieHits[node1.id]
-      }, 200)
+      }, 1000)
     }
   } else if (users[node2.id]
     && users[node1.id].radius > users[node2.id].radius
     && !users[node2.id].invulnerable) {
+    const growAmount = node2.radius * (gameOptions.GROW_FACTOR / (gameOptions.FPS * 1.1))
+    users[node1.id].radius += growAmount
+    users[node2.id].radius -= growAmount * 2
+
     if (users[node2.id].radius < gameOptions.PLAYER_RADIUS) {
-      users[node1.id].radius += users[node2.id].radius
       deleteUser(node2.id)
-    } else {
-      const growAmount = node2.radius * (gameOptions.GROW_FACTOR / (gameOptions.FPS * 1.1))
-      users[node1.id].radius += growAmount
-      users[node2.id].radius -= growAmount
     }
   }
 }
@@ -206,48 +257,13 @@ const startCollisionsConsumer = async () => {
   })
 }
 
-const setInvulnerable = (uId, userEvent) => {
-  users[uId].invulnerable = true
-  users[uId].sprite = gameOptions.DEFAULT_INVULNERABILITY_SPRITE
-
-
-  clearTimeout(users[uId].invulnerabilityTimeout)
-  users[uId].invulnerabilityTimeout = setTimeout(() => {
-    if (users[uId]) {
-      users[uId].invulnerable = false
-      users[uId].sprite = normalSprites[uId]
-    }
-  }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
-}
-
-const setSpeedUp = (uId, userEvent) => {
-  const speedUp = userEvent.value || gameOptions.DEFAULT_SPEEDUP_FACTOR
-  users[uId].speed *= speedUp
-
-  setTimeout(() => {
-    if (users[uId]) {
-      users[uId].speed /= speedUp
-    }
-  }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
-}
-
-const setGrowUp = (uId, userEvent) => {
-  const growUp = userEvent.value || gameOptions.DEFAULT_GROWUP_FACTOR
-  users[uId].growFactor *= growUp
-
-  setTimeout(() => {
-    if (users[uId]) {
-      users[uId].growFactor /= growUp
-    }
-  }, userEvent.activeTime || gameOptions.DEFAULT_USEREVENT_TIME)
-}
-
 const processUserEvent = (userEvent) => {
   const uId = userEvent.userId
 
   switch (userEvent.event) {
     case USER_EVENTS.GROW:
       if (userEvent.value) users[uId].radius += userEvent.value * users[uId].growFactor
+      if (users[uId].radius < gameOptions.PLAYER_RADIUS) deleteUser(uId)
       break
     case USER_EVENTS.DESTROY:
       deleteUser(uId)
@@ -260,6 +276,9 @@ const processUserEvent = (userEvent) => {
       break
     case USER_EVENTS.GROW_UP:
       setGrowUp(uId, userEvent)
+      break
+    case USER_EVENTS.POSITION_RESET:
+      resetUserPosition(uId)
       break
     default:
   }

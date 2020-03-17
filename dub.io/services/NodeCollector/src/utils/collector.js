@@ -1,5 +1,4 @@
 const avro = require('avsc')
-// const sizeOf = require('object-sizeof')
 const { Kafka } = require('kafkajs')
 
 const NODE_TYPES = require('../../../../NodeTypes')
@@ -10,7 +9,6 @@ const config = require('../../../../config')
 const gameOptions = require('../../../../gameOptions')
 
 const nodes = {}
-// let changed = false
 
 const nodePositions = avro.Type.forSchema(nodePositionsSchema)
 const gridPositions = avro.Type.forSchema(gridPositionsSchema)
@@ -116,8 +114,17 @@ const startConsumer = async () => {
     eachMessage: async (event) => {
       const message = nodePositions.fromBuffer(event.message.value)
       nodes[message.type] = message.nodes
-      // changed = true
+    },
+  })
+}
 
+const startProducer = async () => {
+  await gridProducer.connect()
+}
+
+const startPublishing = () => {
+  setInterval(async () => {
+    if (Object.keys(nodes).length > 0) {
       const gridMessage = gridPositions.toBuffer(createGrid())
 
       await gridProducer.send({
@@ -127,38 +134,16 @@ const startConsumer = async () => {
         }],
         acks: 1,
       })
-    },
-  })
+    }
+  }, 1000 / (gameOptions.FPS * 1.1))
 }
-
-const startProducer = async () => {
-  await gridProducer.connect()
-}
-
-// const startPublishing = () => {
-//   setInterval(async () => {
-//     if (Object.keys(nodes).length > 0 && changed) {
-//       changed = false
-
-//       const gridMessage = gridPositions.toBuffer(createGrid())
-
-//       await gridProducer.send({
-//         topic: config.gridTopic,
-//         messages: [{
-//           value: gridMessage,
-//         }],
-//         acks: 1,
-//       })
-//     }
-//   }, 1000 / (gameOptions.FPS * 1.1))
-// }
 
 const run = async () => {
   await createTopics()
   await startProducer()
   await startConsumer()
 
-  // startPublishing()
+  startPublishing()
 }
 
 const errorTypes = ['unhandledRejection', 'uncaughtException']

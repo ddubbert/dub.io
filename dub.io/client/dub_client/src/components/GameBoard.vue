@@ -7,10 +7,6 @@
     style="height: 100%; width: 100%;"
   >
     <v-col class="pa-0">
-      <div
-        :width="canvasSize"
-        :height="canvasSize"
-      ></div>
       <canvas
         ref="backgroundBoard"
         :width="canvasSize"
@@ -23,8 +19,9 @@
           left: ${left};
         `"
       ></canvas>
+
       <canvas
-        ref="playerBoard"
+        ref="obstacleBoard"
         :width="canvasSize"
         :height="canvasSize"
         :style="`
@@ -35,8 +32,9 @@
           left: ${left};
         `"
       ></canvas>
+
       <canvas
-        ref="obstacleBoard"
+        ref="playerBoard"
         :width="canvasSize"
         :height="canvasSize"
         :style="`
@@ -47,6 +45,7 @@
           left: ${left};
         `"
       ></canvas>
+
       <svg
         ref="startPositionSVG"
         :width="canvasSize + 2"

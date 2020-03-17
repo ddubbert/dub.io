@@ -5,7 +5,7 @@ module.exports = {
   userEventsTopic: 'UserEvents',
   http: 'http://',
   ws: 'ws://',
-  host: 'localhost',
+  host: '192.168.178.27', // 'localhost',
   kafkaHost: 'localhost',
   kafkaPort: 9092
 }

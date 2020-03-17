@@ -28,7 +28,7 @@ const producer = kafka.producer()
 const collisionConsumer = kafka.consumer({ groupId: 'Food-Collisions' })
 
 const addFoodAtRandomPosition = () => {
-  const max = gameOptions.GRID_SIZE - 1 - gameOptions.FOOD_RADIUS * 10
+  const max = gameOptions.GRID_SIZE - 1 - gameOptions.OBSTACLE_MIN_RADIUS * 2
   const min = gameOptions.FOOD_RADIUS * 10
 
   const position = {
@@ -42,7 +42,7 @@ const addFoodAtRandomPosition = () => {
     title: NODE_TYPES.FOOD,
     position,
     radius: gameOptions.FOOD_RADIUS,
-    sprite: null, // gameOptions.DEFAULT_FOOD_SPRITE,
+    sprite: null,
     color: COLORS[Math.floor(Math.random() * COLORS.length)],
   }
 

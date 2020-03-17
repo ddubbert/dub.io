@@ -7,6 +7,7 @@ const subscriptions = require('./subscriptions');
 
 let count = 0;
 let renderCount = 0;
+let currentGrid = {};
 let start = new Date().getTime();
 
 const client = graphqlClient(`${config.http}${config.host}:3000/graphql`, `${config.ws}${config.host}:3000/subscriptions`);
@@ -70,11 +71,11 @@ const createBackgroundImage = () => {
   const data = `<svg width="${backgroundScratchSize}" height="${backgroundScratchSize}" xmlns="http://www.w3.org/2000/svg"> \
       <defs> \
           <pattern id="smallGrid" width="${lineDist}" height="${lineDist}" patternUnits="userSpaceOnUse"> \
-              <path d="M ${lineDist} 0 L 0 0 0 ${lineDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes / 10}" /> \
+              <path d="M ${lineDist} 0 L 0 0 0 ${lineDist}" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="${lineThicknes / 5}" /> \
           </pattern> \
           <pattern id="grid" width="${greaterDist}" height="${greaterDist}" patternUnits="userSpaceOnUse"> \
               <rect width="${greaterDist}" height="${greaterDist}" fill="url(#smallGrid)" />
-              <path d="M ${greaterDist} 0 L 0 0 0 ${greaterDist}" fill="none" stroke="rgba(0,0,0,1)" stroke-width="${lineThicknes * 2}" /> \
+              <path d="M ${greaterDist} 0 L 0 0 0 ${greaterDist}" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="${lineThicknes / 2}" /> \
           </pattern> \
       </defs> \
       <rect width="${backgroundScratchSize}" height="${backgroundScratchSize}" fill="url(#grid)" /> \
@@ -89,7 +90,7 @@ const createBackgroundImage = () => {
   img.onload = () => {
     scratchCTX.save();
     scratchCTX.lineWidth = lineThicknes * 5;
-    scratch.strokeStyle = 'rgb(0,0,0)';
+    scratchCTX.strokeStyle = 'rgb(0,0,0)';
     scratchCTX.beginPath();
     scratchCTX.moveTo(0, 0);
     scratchCTX.lineTo(backgroundScratchSize, 0);
@@ -106,15 +107,12 @@ const createBackgroundImage = () => {
   backgroundImage = scratch;
 };
 
-const getBackgroundImage = () => {
-  if (!backgroundImage) createBackgroundImage();
-  return backgroundImage;
-};
-
 const drawBackground = () => {
-  if (canvasSize > 1 && backgroundCTX) {
+  if (canvasSize > 1 && backgroundCTX && backgroundImage) {
+    backgroundCTX.clearRect(0, 0, canvasSize, canvasSize);
+
     backgroundCTX.drawImage(
-      getBackgroundImage(),
+      backgroundImage,
       0,
       0,
       backgroundScratchSize,
@@ -186,7 +184,7 @@ let drawTimeout = null;
 const setCanvasSize = (size) => {
   canvasSize = size;
   canvasCenter = size / 2;
-  backgroundScratchSize = canvasSize * 2;
+  backgroundScratchSize = (canvasSize + 2) * 4;
   playerBoardSize = canvasSize * PLAYER_RADIUS_SIZE_FACTOR_ON_BOARD;
   setCanvasScaling();
 
@@ -306,7 +304,7 @@ const drawImageCircle = (node, ctx) => {
     radius * 2,
     radius * 2,
   );
-  ctx.stroke();
+  if (node.type !== NODE_TYPES.OBSTACLE) ctx.stroke();
   ctx.restore();
 };
 
@@ -337,8 +335,6 @@ const drawColorCircle = (node, ctx) => {
 };
 
 const drawMasterGrid = (grid) => {
-  drawBackground();
-
   grid.cols.forEach((col) => {
     col.rows.forEach((row) => {
       row.nodes.forEach((node) => {
@@ -350,13 +346,9 @@ const drawMasterGrid = (grid) => {
       });
     });
   });
-
-  translateBackground();
 };
 
 const drawPlayerGrid = (grid) => {
-  drawBackground();
-
   xIndices.forEach((xI) => {
     yIndices.forEach((yI) => {
       grid.cols[xI].rows[yI].nodes.forEach((node) => {
@@ -368,15 +360,9 @@ const drawPlayerGrid = (grid) => {
       });
     });
   });
-
-  translateBackground();
 };
 
 const prepareRendering = (grid) => {
-  backgroundCTX.clearRect(0, 0, canvasSize, canvasSize);
-  playerCTX.clearRect(0, 0, canvasSize, canvasSize);
-  obstacleCTX.clearRect(0, 0, canvasSize, canvasSize);
-
   let user = null;
   if (userId) {
     const u = grid.playerNodes.filter((p) => p.id === userId);
@@ -432,13 +418,14 @@ const prepareRendering = (grid) => {
 };
 
 const drawGrid = (grid) => {
-  prepareRendering(grid);
+  playerCTX.clearRect(0, 0, canvasSize, canvasSize);
+  obstacleCTX.clearRect(0, 0, canvasSize, canvasSize);
+
   if (userId) drawPlayerGrid(grid);
   else drawMasterGrid(grid);
   renderCount += 1;
 };
 
-let currentGrid = {};
 (async () => {
   await client.subscribe({
     query: subscriptions.GRID_SUBSCRIPTION,
@@ -450,6 +437,14 @@ let currentGrid = {};
     error(err) { console.error('err', err); },
   });
 
+
+  setInterval(() => {
+    prepareRendering(currentGrid);
+    drawBackground();
+    translateBackground();
+    drawGrid(currentGrid);
+  }, 1000 / gameOptions.FPS);
+
   setInterval(() => {
     const diff = (new Date().getTime() - start);
     console.log('Sub: ', count / (diff / 1000));
@@ -459,10 +454,6 @@ let currentGrid = {};
     renderCount = 0;
   }, 5000);
 })();
-
-setInterval(() => {
-  drawGrid(currentGrid);
-}, 1000 / gameOptions.FPS);
 
 
 module.exports = {
