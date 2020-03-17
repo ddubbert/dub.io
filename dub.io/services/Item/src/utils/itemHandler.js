@@ -43,12 +43,11 @@ const addRandomItemAtRandomPosition = () => {
   const item = {
     id: uniqid(),
     type: NODE_TYPES.ITEM,
-    createdAt: new Date().getTime(),
-    title: itemType,
+    title: itemType.title,
     position,
     radius: gameOptions.ITEM_RADIUS,
-    sprite: itemType,
-    color: 'rgb(0,0,0)',
+    sprite: itemType.sprite,
+    color: itemType.color,
   }
 
   items[item.id] = item
@@ -72,44 +71,20 @@ const getNodes = () => {
 
 const publishUserEvent = async (playerNode, itemNode) => {
   try {
-    let event = null
-    let value = null
-    let activeTime = null
+    const message = userEvents.toBuffer({
+      userId: playerNode.id,
+      event: ITEM_TYPES[itemNode.title].userEvent,
+      value: ITEM_TYPES[itemNode.title].value,
+      activeTime: ITEM_TYPES[itemNode.title].activeTime,
+    })
 
-    switch (itemNode.title) {
-      case ITEM_TYPES.SPEEDUP:
-        event = USER_EVENTS.SPEED_UP
-        value = gameOptions.DEFAULT_SPEEDUP_FACTOR
-        activeTime = gameOptions.DEFAULT_ITEM_ACTIVE_TIME
-        break
-      case ITEM_TYPES.INVULNERABLE:
-        event = USER_EVENTS.INVULNERABLE
-        activeTime = gameOptions.DEFAULT_ITEM_ACTIVE_TIME * 0.5
-        break
-      case ITEM_TYPES.GROWUP:
-        event = USER_EVENTS.GROW_UP
-        value = gameOptions.DEFAULT_GROWUP_FACTOR
-        activeTime = gameOptions.DEFAULT_ITEM_ACTIVE_TIME
-        break
-      default:
-    }
-
-    if (event) {
-      const message = userEvents.toBuffer({
-        user: playerNode,
-        event,
-        value,
-        activeTime,
-      })
-
-      await producer.send({
-        topic: config.userEventsTopic,
-        messages: [{
-          value: message,
-        }],
-        acks: 0,
-      })
-    }
+    await producer.send({
+      topic: config.userEventsTopic,
+      messages: [{
+        value: message,
+      }],
+      acks: 1,
+    })
   } catch (e) {
     console.error(e)
   }
@@ -123,7 +98,7 @@ const publishItems = async () => {
       messages: [{
         value: message,
       }],
-      acks: 0,
+      acks: 1,
     })
   } catch (e) {
     console.error(e)
@@ -166,8 +141,9 @@ const createTopics = async () => {
 
 const processCollision = (playerNode, itemNode) => {
   if (items[itemNode.id]) {
+    const iNode = { ...items[itemNode.id] }
     delete items[itemNode.id]
-    publishUserEvent(playerNode, itemNode)
+    publishUserEvent(playerNode, iNode)
     addRandomItemAtRandomPosition()
     publishItems()
   }
@@ -181,9 +157,9 @@ const startConsumer = async () => {
   await collisionConsumer.run({
     eachMessage: async (event) => {
       const message = collision.fromBuffer(event.message.value)
-      if (message.nodes[0].type === NODE_TYPES.PLAYER
-        && message.nodes[1].type === NODE_TYPES.ITEM) {
-        processCollision(message.nodes[0], message.nodes[1])
+      if (message.collisionNodes[0].type === NODE_TYPES.PLAYER
+        && message.collisionNodes[1].type === NODE_TYPES.ITEM) {
+        processCollision(message.collisionNodes[0], message.collisionNodes[1])
       }
     },
   })

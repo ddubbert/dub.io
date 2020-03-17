@@ -61,8 +61,8 @@
         `"
       >
         <circle
-          :cx="startPosition.x"
-          :cy="startPosition.y"
+          :cx="1+ startPosition.x"
+          :cy="1+ startPosition.y"
           :r="canvasSize / 50"
           stroke="black"
           stroke-width="3"
@@ -71,16 +71,16 @@
         />
 
         <circle
-          :cx="startPosition.x"
-          :cy="startPosition.y"
+          :cx="1 + startPosition.x"
+          :cy="1 + startPosition.y"
           :r="3"
           fill="black"
           :style="`visibility: ${(startCanvasVisible && !gameOver) ? 'visible' : 'hidden'};`"
         />
 
         <text
-          :x="startPosition.x"
-          :y="(startPosition.y - (canvasSize / 50) * 2 > 0)
+          :x="1 + startPosition.x"
+          :y="1 + (startPosition.y - (canvasSize / 50) * 2 > 0)
             ? startPosition.y - (canvasSize / 50) * 2
             : startPosition.y + (canvasSize / 50) * 2 + 20"
           text-anchor="middle"
@@ -125,14 +125,6 @@ export default {
       gameOver: false,
     };
   },
-  computed: {
-    canvas() {
-      return this.$refs.playerBoard;
-    },
-    ctx() {
-      return this.canvas.getContext('2d');
-    },
-  },
   methods: {
     getMousePosition(canvas, event) {
       const rect = canvas.getBoundingClientRect();
@@ -146,28 +138,37 @@ export default {
       });
     },
     setCanvasParameter() {
-      const width = this.$refs.canvasDiv.clientWidth;
-      const height = this.$refs.canvasDiv.clientHeight;
+      const {
+        width,
+        height,
+        top,
+        left,
+      } = this.$refs.canvasDiv.getBoundingClientRect();
+
       this.canvasSize = (width > height) ? height : width;
       this.startPosition.x = this.canvasSize / 2;
       this.startPosition.y = this.canvasSize / 2;
 
-      const heightDiff = (this.$refs.canvasDiv.clientHeight - this.canvasSize);
-      this.top = `${this.$refs.canvasDiv.getBoundingClientRect().top + heightDiff / 2}px`;
-      this.left = `${this.$refs.canvasDiv.getBoundingClientRect().left + width / 2 - this.canvasSize / 2}px`;
+      const heightDiff = (height - this.canvasSize);
+      this.top = `${top + heightDiff / 2}px`;
+      this.left = `${left + width / 2 - this.canvasSize / 2}px`;
 
       drawUtils.setCanvasSize(this.canvasSize);
     },
   },
   created() {
-    this.$store.watch(
-      (state, getters) => getters.grid,
-      (newValue) => {
-        if (this.canvas) {
-          drawUtils.setGrid(newValue);
-        }
-      },
-    );
+  },
+  mounted() {
+    this.setCanvasParameter();
+    drawUtils.setPlayerContext(this.$refs.playerBoard.getContext('2d', { alpha: false }));
+    drawUtils.setBackgroundContext(this.$refs.backgroundBoard.getContext('2d', { alpha: false }));
+    drawUtils.setObstacleContext(this.$refs.obstacleBoard.getContext('2d', { alpha: false }));
+
+    this.$refs.startPositionSVG.addEventListener('mousedown', (e) => {
+      this.getMousePosition(this.$refs.startPositionSVG, e);
+    });
+
+    window.addEventListener('resize', this.setCanvasParameter);
 
     this.$store.watch(
       (state, getters) => getters.userId,
@@ -188,18 +189,6 @@ export default {
         else drawUtils.stopMusic();
       },
     );
-  },
-  mounted() {
-    this.setCanvasParameter();
-    drawUtils.setPlayerContext(this.ctx);
-    drawUtils.setBackgroundContext(this.$refs.backgroundBoard.getContext('2d'));
-    drawUtils.setObstacleContext(this.$refs.obstacleBoard.getContext('2d'));
-
-    this.$refs.startPositionSVG.addEventListener('mousedown', (e) => {
-      this.getMousePosition(this.$refs.startPositionSVG, e);
-    });
-
-    window.addEventListener('resize', this.setCanvasParameter);
   },
 };
 </script>

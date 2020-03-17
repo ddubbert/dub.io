@@ -29,6 +29,7 @@ const userEventsConsumer = kafka.consumer({ groupId: 'User-Events' })
 
 const users = {}
 const normalSprites = {}
+const userBoundarieHits = {}
 let pubsub = null
 let renderEmpty = false
 
@@ -88,9 +89,11 @@ const changeDirection = (id, direction) => {
 
 const moveUsers = async () => {
   Object.keys(users).forEach((id) => {
-    const slowDown = 1 - (users[id].radius / gameOptions.GRID_SIZE / 2)
-    users[id].position.x += users[id].direction.x * (users[id].speed / gameOptions.FPS) * slowDown
-    users[id].position.y += users[id].direction.y * (users[id].speed / gameOptions.FPS) * slowDown
+    const slowDown = Math.min(1 - (users[id].radius / gameOptions.GRID_SIZE / 2), 0.5)
+    users[id].position.x += users[id].direction.x
+      * (users[id].speed / (gameOptions.FPS * 1.1)) * slowDown
+    users[id].position.y += users[id].direction.y
+      * (users[id].speed / (gameOptions.FPS * 1.1)) * slowDown
   })
 }
 
@@ -98,7 +101,6 @@ const getUserNodes = () => {
   const nodes = { ...users }
   return Object.keys(nodes).map((id) => ({
     id: nodes[id].id,
-    createdAt: nodes[id].createdAt,
     type: nodes[id].type,
     title: nodes[id].title,
     position: nodes[id].position,
@@ -154,7 +156,7 @@ const startPublishing = () => {
         messages: [{
           value: message,
         }],
-        acks: 0,
+        acks: 1,
       })
     }
   }, 1000 / (gameOptions.FPS * 1.1))
@@ -162,10 +164,16 @@ const startPublishing = () => {
 
 const processCollision = (node1, node2) => {
   if (node2.type === NODE_TYPES.BOUNDARIES) {
-    const newRadius = users[node1.id].radius * gameOptions.PLAYER_RESET_FACTOR
+    if (!userBoundarieHits[node1.id]) {
+      const newRadius = users[node1.id].radius * gameOptions.PLAYER_RESET_FACTOR
 
-    if (newRadius < gameOptions.PLAYER_RADIUS) deleteUser(node1.id)
-    else users[node1.id].radius = newRadius
+      if (newRadius < gameOptions.PLAYER_RADIUS) deleteUser(node1.id)
+      else users[node1.id].radius = newRadius
+
+      userBoundarieHits[node1.id] = setTimeout(() => {
+        delete userBoundarieHits[node1.id]
+      }, 200)
+    }
   } else if (users[node2.id]
     && users[node1.id].radius > users[node2.id].radius
     && !users[node2.id].invulnerable) {
@@ -173,7 +181,7 @@ const processCollision = (node1, node2) => {
       users[node1.id].radius += users[node2.id].radius
       deleteUser(node2.id)
     } else {
-      const growAmount = node2.radius * (gameOptions.GROW_FACTOR / gameOptions.FPS)
+      const growAmount = node2.radius * (gameOptions.GROW_FACTOR / (gameOptions.FPS * 1.1))
       users[node1.id].radius += growAmount
       users[node2.id].radius -= growAmount
     }
@@ -188,11 +196,11 @@ const startCollisionsConsumer = async () => {
   await collisionConsumer.run({
     eachMessage: async (event) => {
       const message = collision.fromBuffer(event.message.value)
-      if (message.nodes[0].type === NODE_TYPES.PLAYER
-        && users[message.nodes[0].id]
-        && (message.nodes[1].type === NODE_TYPES.PLAYER
-          || message.nodes[1].type === NODE_TYPES.BOUNDARIES)) {
-        processCollision(message.nodes[0], message.nodes[1])
+      if (message.collisionNodes[0].type === NODE_TYPES.PLAYER
+        && users[message.collisionNodes[0].id]
+        && (message.collisionNodes[1].type === NODE_TYPES.PLAYER
+          || message.collisionNodes[1].type === NODE_TYPES.BOUNDARIES)) {
+        processCollision(message.collisionNodes[0], message.collisionNodes[1])
       }
     },
   })
@@ -235,7 +243,7 @@ const setGrowUp = (uId, userEvent) => {
 }
 
 const processUserEvent = (userEvent) => {
-  const uId = userEvent.user.id
+  const uId = userEvent.userId
 
   switch (userEvent.event) {
     case USER_EVENTS.GROW:
@@ -265,7 +273,7 @@ const startUserEventsConsumer = async () => {
   await userEventsConsumer.run({
     eachMessage: async (event) => {
       const message = userEvents.fromBuffer(event.message.value)
-      if (users[message.user.id]) {
+      if (users[message.userId]) {
         processUserEvent(message)
       }
     },

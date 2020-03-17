@@ -13,6 +13,7 @@ const config = require('../../../../config')
 const gameOptions = require('../../../../gameOptions')
 
 const food = {}
+const COLORS = ['#B29DD9', '#FDFD98', '#FE6B64', '#77DD77', '#779ECB']
 
 const nodePositions = avro.Type.forSchema(nodePositionsSchema)
 const collision = avro.Type.forSchema(collisionSchema)
@@ -38,12 +39,11 @@ const addFoodAtRandomPosition = () => {
   const f = {
     id: uniqid(),
     type: NODE_TYPES.FOOD,
-    createdAt: new Date().getTime(),
     title: NODE_TYPES.FOOD,
     position,
     radius: gameOptions.FOOD_RADIUS,
-    sprite: gameOptions.DEFAULT_FOOD_SPRITE,
-    color: 'rgb(255,255,255)',
+    sprite: null, // gameOptions.DEFAULT_FOOD_SPRITE,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
   }
 
   food[f.id] = f
@@ -68,7 +68,7 @@ const getNodes = () => {
 const publishUserEvent = async (playerNode, foodNode) => {
   try {
     const message = userEvents.toBuffer({
-      user: playerNode,
+      userId: playerNode.id,
       event: USER_EVENTS.GROW,
       value: gameOptions.GROW_FACTOR * foodNode.radius,
       activeTime: null,
@@ -79,7 +79,7 @@ const publishUserEvent = async (playerNode, foodNode) => {
       messages: [{
         value: message,
       }],
-      acks: 0,
+      acks: 1,
     })
   } catch (e) {
     console.error(e)
@@ -94,7 +94,7 @@ const publishFood = async () => {
       messages: [{
         value: message,
       }],
-      acks: 0,
+      acks: 1,
     })
   } catch (e) {
     console.error(e)
@@ -137,8 +137,9 @@ const createTopics = async () => {
 
 const processCollision = (playerNode, foodNode) => {
   if (food[foodNode.id]) {
+    const fNode = { ...food[foodNode.id] }
     delete food[foodNode.id]
-    publishUserEvent(playerNode, foodNode)
+    publishUserEvent(playerNode, fNode)
     addFoodAtRandomPosition()
     publishFood()
   }
@@ -152,9 +153,9 @@ const startConsumer = async () => {
   await collisionConsumer.run({
     eachMessage: async (event) => {
       const message = collision.fromBuffer(event.message.value)
-      if (message.nodes[0].type === NODE_TYPES.PLAYER
-        && message.nodes[1].type === NODE_TYPES.FOOD) {
-        processCollision(message.nodes[0], message.nodes[1])
+      if (message.collisionNodes[0].type === NODE_TYPES.PLAYER
+        && message.collisionNodes[1].type === NODE_TYPES.FOOD) {
+        processCollision(message.collisionNodes[0], message.collisionNodes[1])
       }
     },
   })

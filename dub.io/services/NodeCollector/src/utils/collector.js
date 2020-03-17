@@ -10,6 +10,7 @@ const config = require('../../../../config')
 const gameOptions = require('../../../../gameOptions')
 
 const nodes = {}
+// let changed = false
 
 const nodePositions = avro.Type.forSchema(nodePositionsSchema)
 const gridPositions = avro.Type.forSchema(gridPositionsSchema)
@@ -23,43 +24,53 @@ const admin = kafka.admin()
 const gridProducer = kafka.producer()
 
 const createGrid = () => {
-  const currentNodes = { ...nodes }
-  let count = 0
-  const playerNodes = []
-
-  const maxRadius = Object.keys(currentNodes).reduce(
-    (acc, nodeType) => currentNodes[nodeType].reduce(
-      (innerAcc, node) => {
-        count += 1
-        return (node.radius > innerAcc) ? node.radius : innerAcc
-      },
-      acc,
-    ),
+  const maxRadiusPlayer = (nodes[NODE_TYPES.PLAYER] || []).reduce(
+    (innerAcc, node) => (node.radius > innerAcc) ? node.radius : innerAcc,
     0,
   )
 
-  const cellSize = (count > 100) ? maxRadius * 2 : gameOptions.GRID_SIZE
+  const maxRadiusObstacle = (nodes[NODE_TYPES.OBSTACLE] || []).reduce(
+    (innerAcc, node) => (node.radius > innerAcc) ? node.radius : innerAcc,
+    0,
+  )
 
-  const amountCells = Math.floor(gameOptions.GRID_SIZE / cellSize)
+  const maxSize = Math.max(maxRadiusPlayer * 2, maxRadiusObstacle * 2) || gameOptions.GRID_SIZE / 4
+
+  const amountCells = Math.max(Math.floor(gameOptions.GRID_SIZE / maxSize), 1)
+
+  const cellSize = gameOptions.GRID_SIZE / amountCells
 
   const cols = [...Array(amountCells).keys()].map(() => {
     const rows = [...Array(amountCells).keys()].map(() => ({ nodes: [] }))
     return { rows }
   })
 
-  Object.keys(currentNodes).forEach(
-    (nodeType) => currentNodes[nodeType].forEach(
+  const playerNodes = []
+
+  Object.keys(nodes).forEach(
+    (nodeType) => nodes[nodeType].forEach(
       (node) => {
         const x = Math.max(
-          Math.min(Math.floor(node.position.x / maxRadius), amountCells - 1),
+          Math.min(Math.floor(node.position.x / cellSize), amountCells - 1),
           0,
         )
         const y = Math.max(
-          Math.min(Math.floor(node.position.y / maxRadius), amountCells - 1),
+          Math.min(Math.floor(node.position.y / cellSize), amountCells - 1),
           0,
         )
         cols[x].rows[y].nodes.push(node)
-        if (nodeType === NODE_TYPES.PLAYER) playerNodes.push({ ...node, gridIndices: { x, y } })
+
+        if (nodeType === NODE_TYPES.PLAYER) {
+          playerNodes.push({
+            id: node.id,
+            title: node.title,
+            position: node.position,
+            radius: node.radius,
+            sprite: node.sprite,
+            color: node.color,
+            gridIndices: { x, y },
+          })
+        }
       },
     ),
   )
@@ -105,6 +116,7 @@ const startConsumer = async () => {
     eachMessage: async (event) => {
       const message = nodePositions.fromBuffer(event.message.value)
       nodes[message.type] = message.nodes
+      // changed = true
 
       const gridMessage = gridPositions.toBuffer(createGrid())
 
@@ -113,7 +125,7 @@ const startConsumer = async () => {
         messages: [{
           value: gridMessage,
         }],
-        acks: 0,
+        acks: 1,
       })
     },
   })
@@ -123,10 +135,30 @@ const startProducer = async () => {
   await gridProducer.connect()
 }
 
+// const startPublishing = () => {
+//   setInterval(async () => {
+//     if (Object.keys(nodes).length > 0 && changed) {
+//       changed = false
+
+//       const gridMessage = gridPositions.toBuffer(createGrid())
+
+//       await gridProducer.send({
+//         topic: config.gridTopic,
+//         messages: [{
+//           value: gridMessage,
+//         }],
+//         acks: 1,
+//       })
+//     }
+//   }, 1000 / (gameOptions.FPS * 1.1))
+// }
+
 const run = async () => {
   await createTopics()
   await startProducer()
   await startConsumer()
+
+  // startPublishing()
 }
 
 const errorTypes = ['unhandledRejection', 'uncaughtException']

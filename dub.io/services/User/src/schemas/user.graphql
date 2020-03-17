@@ -20,7 +20,6 @@ type Subscription {
 type User {
     id: ID!
     type: String!
-    createdAt: DateTime!
     title: String!
     position: Position!
     radius: Float!

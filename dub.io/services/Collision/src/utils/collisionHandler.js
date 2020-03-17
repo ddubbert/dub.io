@@ -22,14 +22,28 @@ const collisionProducer = kafka.producer()
 
 const sendCollisionMessage = async (node1, node2) => {
   try {
-    const message = collision.toBuffer({ nodes: [node1, node2] })
+    const message = collision.toBuffer({
+      collisionNodes: [{
+        id: node1.id,
+        type: NODE_TYPES.PLAYER,
+        title: node1.title,
+        position: node1.position,
+        radius: node1.radius,
+      }, {
+        id: node2.id,
+        type: node2.type,
+        title: node2.title,
+        position: node2.position,
+        radius: node2.radius,
+      }],
+    })
 
     await collisionProducer.send({
       topic: config.collisionTopic,
       messages: [{
         value: message,
       }],
-      acks: 0,
+      acks: 1,
     })
   } catch (e) {
     console.log(e)
@@ -56,15 +70,12 @@ const checkForCollisions = async (message) => {
       sendCollisionMessage(node, {
         id: NODE_TYPES.BOUNDARIES,
         type: NODE_TYPES.BOUNDARIES,
-        createdAt: new Date().getTime(),
         title: NODE_TYPES.BOUNDARIES,
         position: {
           x: gameOptions.GRID_SIZE,
           y: gameOptions.GRID_SIZE,
         },
         radius: 0,
-        color: null,
-        sprite: null,
       })
     } else {
       const { x, y } = node.gridIndices

@@ -5,7 +5,6 @@ const node = {
   type: 'record',
   fields: [
     { name: 'id', type: 'string' },
-    { name: 'createdAt', type: 'long' },
     { name: 'type', type: 'string' },
     { name: 'title', type: 'string' },
     { name: 'position', type: position },
@@ -24,13 +23,11 @@ const gridIndices = {
   ],
 }
 
-const gridNode = {
+const playerNode = {
   name: 'GridNode',
   type: 'record',
   fields: [
     { name: 'id', type: 'string' },
-    { name: 'createdAt', type: 'long' },
-    { name: 'type', type: 'string' },
     { name: 'title', type: 'string' },
     { name: 'position', type: 'Position' },
     { name: 'radius', type: 'float' },
@@ -42,5 +39,5 @@ const gridNode = {
 
 module.exports = {
   node,
-  gridNode,
+  playerNode,
 }

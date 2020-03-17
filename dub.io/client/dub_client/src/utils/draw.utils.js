@@ -1,8 +1,17 @@
+/* eslint-disable no-param-reassign */
 const NODE_TYPES = require('../../../../NodeTypes');
 const gameOptions = require('../../../../gameOptions');
 const config = require('../../../../config');
+const graphqlClient = require('./graphql.utils').default;
+const subscriptions = require('./subscriptions');
 
-const PLAYER_SIZE_FACTOR_ON_BOARD = 0.1;
+let count = 0;
+let renderCount = 0;
+let start = new Date().getTime();
+
+const client = graphqlClient(`${config.http}${config.host}:3000/graphql`, `${config.ws}${config.host}:3000/subscriptions`);
+
+const PLAYER_RADIUS_SIZE_FACTOR_ON_BOARD = 0.1;
 
 let canvasSize = 1;
 let canvasCenter = 0.5;
@@ -11,15 +20,13 @@ let playerCTX = null;
 let backgroundCTX = null;
 let obstacleCTX = null;
 let userId = '';
-let offset = {
+const offset = {
   x: 0,
   y: 0,
 };
 let zoomScaleFactor = 1;
 let xIndices = [];
 let yIndices = [];
-
-let currentGrid = null;
 
 let canvasScaling = 1;
 const borderFactor = 0.05;
@@ -40,6 +47,14 @@ let animationInterval = null;
 
 let backgroundImage = null;
 let backgroundScratchSize = 1;
+
+let currentUserRadius = 0;
+let currentCellSize = 0;
+let currentGridIndices = {
+  x: 0,
+  y: 0,
+};
+let amountCells = 0;
 
 const createBackgroundImage = () => {
   const scratch = document.createElement('canvas');
@@ -73,8 +88,8 @@ const createBackgroundImage = () => {
 
   img.onload = () => {
     scratchCTX.save();
-    scratchCTX.lineWidth = lineThicknes * 10;
-    scratch.strokeStyle = 'rgb(255,0,0)';
+    scratchCTX.lineWidth = lineThicknes * 5;
+    scratch.strokeStyle = 'rgb(0,0,0)';
     scratchCTX.beginPath();
     scratchCTX.moveTo(0, 0);
     scratchCTX.lineTo(backgroundScratchSize, 0);
@@ -171,8 +186,8 @@ let drawTimeout = null;
 const setCanvasSize = (size) => {
   canvasSize = size;
   canvasCenter = size / 2;
-  backgroundScratchSize = canvasSize * 4;
-  playerBoardSize = canvasSize * PLAYER_SIZE_FACTOR_ON_BOARD;
+  backgroundScratchSize = canvasSize * 2;
+  playerBoardSize = canvasSize * PLAYER_RADIUS_SIZE_FACTOR_ON_BOARD;
   setCanvasScaling();
 
   clearTimeout(drawTimeout);
@@ -185,23 +200,25 @@ const setCanvasSize = (size) => {
 
 const setUserId = (id) => {
   userId = id;
+  start = new Date().getTime();
+  count = 0;
+  renderCount = 0;
 };
 
 const setPlayerContext = (context) => {
   playerCTX = context;
+  playerCTX.strokeStyle = 'rgb(0,0,0)';
 };
 
 const setBackgroundContext = (context) => {
   backgroundCTX = context;
+  backgroundCTX.strokeStyle = 'rgb(0,0,0)';
   drawBackground();
 };
 
 const setObstacleContext = (context) => {
   obstacleCTX = context;
-};
-
-const setGrid = (grid) => {
-  currentGrid = grid;
+  obstacleCTX.strokeStyle = 'rgb(0,0,0)';
 };
 
 const getCorrectImage = (node) => {
@@ -219,7 +236,14 @@ const getCorrectImage = (node) => {
       context.fillStyle = '#fff';
       context.globalCompositeOperation = 'destination-in';
       context.beginPath();
-      context.arc(scratchSize / 2, scratchSize / 2, scratchSize / 2, 0, 2 * Math.PI, true);
+      context.arc(
+        scratchSize / 2,
+        scratchSize / 2,
+        scratchSize / 2,
+        0,
+        2 * Math.PI,
+        true,
+      );
       context.closePath();
       context.fill();
     }, true);
@@ -238,7 +262,9 @@ const getNodeParameter = (node) => {
   const x = (((xOnCanvas) + offset.x) - canvasCenter) * zoomScaleFactor + canvasCenter;
   const y = (((yOnCanvas) + offset.y) - canvasCenter) * zoomScaleFactor + canvasCenter;
   const radius = radiusOnCanvas * zoomScaleFactor * pulse;
-  const rotation = (node.type === NODE_TYPES.FOOD) ? currentRotationFactor * rotationMaxAngle : 0;
+  const rotation = (node.type === NODE_TYPES.ITEM)
+    ? currentRotationFactor * rotationMaxAngle
+    : 0;
 
   return {
     x,
@@ -248,8 +274,7 @@ const getNodeParameter = (node) => {
   };
 };
 
-const drawImageCircle = (node, context) => {
-  const ctx = context;
+const drawImageCircle = (node, ctx) => {
   const {
     x,
     y,
@@ -259,7 +284,6 @@ const drawImageCircle = (node, context) => {
 
   ctx.save();
   ctx.lineWidth = radius * borderFactor;
-  ctx.strokeStyle = 'rgb(0,0,0)';
   ctx.fillStyle = node.color;
   ctx.translate(x, y);
   ctx.rotate(rotation / 100);
@@ -286,8 +310,7 @@ const drawImageCircle = (node, context) => {
   ctx.restore();
 };
 
-const drawColorCircle = (node, context) => {
-  const ctx = context;
+const drawColorCircle = (node, ctx) => {
   const {
     x,
     y,
@@ -297,7 +320,6 @@ const drawColorCircle = (node, context) => {
 
   ctx.save();
   ctx.lineWidth = radius * borderFactor;
-  ctx.strokeStyle = 'rgb(0,0,0)';
   ctx.fillStyle = node.color;
   ctx.translate(x, y);
   ctx.rotate(rotation / 100);
@@ -314,10 +336,10 @@ const drawColorCircle = (node, context) => {
   ctx.restore();
 };
 
-const drawMasterGrid = () => {
+const drawMasterGrid = (grid) => {
   drawBackground();
 
-  currentGrid.cols.forEach((col) => {
+  grid.cols.forEach((col) => {
     col.rows.forEach((row) => {
       row.nodes.forEach((node) => {
         let ctx = playerCTX;
@@ -332,12 +354,12 @@ const drawMasterGrid = () => {
   translateBackground();
 };
 
-const drawPlayerGrid = () => {
+const drawPlayerGrid = (grid) => {
   drawBackground();
 
   xIndices.forEach((xI) => {
     yIndices.forEach((yI) => {
-      currentGrid.cols[xI].rows[yI].nodes.forEach((node) => {
+      grid.cols[xI].rows[yI].nodes.forEach((node) => {
         let ctx = playerCTX;
         if (node.type === NODE_TYPES.OBSTACLE) ctx = obstacleCTX;
 
@@ -362,42 +384,46 @@ const prepareRendering = (grid) => {
   }
 
   if (user) {
-    offset = {
-      x: canvasCenter - user.position.x * canvasScaling,
-      y: canvasCenter - user.position.y * canvasScaling,
-    };
+    offset.x = canvasCenter - user.position.x * canvasScaling;
+    offset.y = canvasCenter - user.position.y * canvasScaling;
 
-    zoomScaleFactor = playerBoardSize / (user.radius * canvasScaling);
+    if (currentUserRadius !== user.radius
+      || grid.cellSize !== currentCellSize
+      || currentGridIndices.x !== user.gridIndices.x
+      || currentGridIndices.y !== user.gridIndices.y) {
+      currentUserRadius = user.radius;
+      currentCellSize = grid.cellSize;
+      currentGridIndices = user.gridIndices;
 
-    const outerRadius = canvasCenter;
-    const amountCells = Math.ceil(
-      outerRadius / (grid.cellSize * canvasScaling),
-    );
+      zoomScaleFactor = playerBoardSize / (user.radius * canvasScaling);
 
-    xIndices = [...Array(amountCells).keys()].reduce((acc, index) => {
-      if (index === 0) return acc;
-      const indices = [];
-      if (user.gridIndices.x - index >= 0) indices.push(user.gridIndices.x - index);
-      if (user.gridIndices.x + index <= grid.cols.length - 1) {
-        indices.push(user.gridIndices.x + index);
-      }
-      return [...acc, ...indices];
-    }, [user.gridIndices.x]);
+      amountCells = Math.ceil(
+        (canvasSize / 2 / zoomScaleFactor / canvasScaling) / grid.cellSize,
+      ) + 1;
 
-    yIndices = [...Array(amountCells).keys()].reduce((acc, index) => {
-      if (index === 0) return acc;
-      const indices = [];
-      if (user.gridIndices.y - index >= 0) indices.push(user.gridIndices.y - index);
-      if (user.gridIndices.y + index <= grid.cols[0].rows.length - 1) {
-        indices.push(user.gridIndices.y + index);
-      }
-      return [...acc, ...indices];
-    }, [user.gridIndices.y]);
+      xIndices = [...Array(amountCells).keys()].reduce((acc, index) => {
+        if (index === 0) return acc;
+        const indices = [];
+        if (user.gridIndices.x - index >= 0) indices.push(user.gridIndices.x - index);
+        if (user.gridIndices.x + index <= grid.cols.length - 1) {
+          indices.push(user.gridIndices.x + index);
+        }
+        return [...acc, ...indices];
+      }, [user.gridIndices.x]);
+
+      yIndices = [...Array(amountCells).keys()].reduce((acc, index) => {
+        if (index === 0) return acc;
+        const indices = [];
+        if (user.gridIndices.y - index >= 0) indices.push(user.gridIndices.y - index);
+        if (user.gridIndices.y + index <= grid.cols[0].rows.length - 1) {
+          indices.push(user.gridIndices.y + index);
+        }
+        return [...acc, ...indices];
+      }, [user.gridIndices.y]);
+    }
   } else {
-    offset = {
-      x: 0,
-      y: 0,
-    };
+    offset.x = 0;
+    offset.y = 0;
 
     zoomScaleFactor = 1;
     xIndices = [...Array(grid.cols.length).keys()];
@@ -407,20 +433,39 @@ const prepareRendering = (grid) => {
 
 const drawGrid = (grid) => {
   prepareRendering(grid);
-  if (userId) drawPlayerGrid();
-  else drawMasterGrid();
+  if (userId) drawPlayerGrid(grid);
+  else drawMasterGrid(grid);
+  renderCount += 1;
 };
 
-const drawGameBoard = () => {
-  if (currentGrid) drawGrid({ ...currentGrid });
-};
+let currentGrid = {};
+(async () => {
+  await client.subscribe({
+    query: subscriptions.GRID_SUBSCRIPTION,
+  }).subscribe({
+    next({ data }) {
+      count += 1;
+      currentGrid = data.renderUpdates;
+    },
+    error(err) { console.error('err', err); },
+  });
+
+  setInterval(() => {
+    const diff = (new Date().getTime() - start);
+    console.log('Sub: ', count / (diff / 1000));
+    console.log('Render: ', renderCount / (diff / 1000));
+    start = new Date().getTime();
+    count = 0;
+    renderCount = 0;
+  }, 5000);
+})();
 
 setInterval(() => {
-  drawGameBoard();
+  drawGrid(currentGrid);
 }, 1000 / gameOptions.FPS);
 
+
 module.exports = {
-  setGrid,
   startMusic,
   stopMusic,
   setCanvasSize,

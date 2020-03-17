@@ -38,7 +38,7 @@ const getNodes = () => {
 const publishUserEvent = async (playerNode) => {
   try {
     const message = userEvents.toBuffer({
-      user: playerNode,
+      userId: playerNode.id,
       event: USER_EVENTS.INVULNERABLE,
       value: null,
       activeTime: gameOptions.DEFAULT_INVULNERABILITY_TIME,
@@ -49,7 +49,7 @@ const publishUserEvent = async (playerNode) => {
       messages: [{
         value: message,
       }],
-      acks: 0,
+      acks: 1,
     })
   } catch (e) {
     console.error(e)
@@ -64,7 +64,7 @@ const publishObstacles = async () => {
       messages: [{
         value: message,
       }],
-      acks: 0,
+      acks: 1,
     })
   } catch (e) {
     console.error(e)
@@ -83,7 +83,6 @@ const addObstacleRandomlyBetweenPositions = (x1, y1, x2, y2) => {
   const obstacle = {
     id: uniqid(),
     type: NODE_TYPES.OBSTACLE,
-    createdAt: new Date().getTime(),
     title: NODE_TYPES.OBSTACLE,
     position: { x, y },
     radius,
@@ -180,9 +179,9 @@ const startConsumer = async () => {
   await collisionConsumer.run({
     eachMessage: async (event) => {
       const message = collision.fromBuffer(event.message.value)
-      if (message.nodes[0].type === NODE_TYPES.PLAYER
-        && message.nodes[1].type === NODE_TYPES.OBSTACLE) {
-        processCollision(message.nodes[0], message.nodes[1])
+      if (message.collisionNodes[0].type === NODE_TYPES.PLAYER
+        && message.collisionNodes[1].type === NODE_TYPES.OBSTACLE) {
+        processCollision(message.collisionNodes[0], message.collisionNodes[1])
       }
     },
   })

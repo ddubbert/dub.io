@@ -27,7 +27,6 @@ type Row {
 type Node {
   id: ID!
   type: String!
-  createdAt: DateTime!
   title: String!
   position: Position!
   radius: Float!
@@ -37,8 +36,6 @@ type Node {
 
 type PlayerNode {
   id: ID!
-  type: String!
-  createdAt: DateTime!
   title: String!
   position: Position!
   radius: Float!

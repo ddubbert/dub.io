@@ -22,7 +22,7 @@ const gridPositions = {
   fields: [
     { name: 'cellSize', type: 'float' },
     { name: 'cols', type: { type: 'array', items: col }},
-    { name: 'playerNodes', type: { type: 'array', items: nodes.gridNode }}
+    { name: 'playerNodes', type: { type: 'array', items: nodes.playerNode }}
   ],
 }
 
