@@ -21,7 +21,7 @@ const config = require('../../config')
 const endpoints = [
   `${config.host}:3001`,
   `${config.host}:3002`,
-  `${config.host}:3007`,
+  `${config.host}:3003`,
 ]
 
 function createHttpLink(url) {
