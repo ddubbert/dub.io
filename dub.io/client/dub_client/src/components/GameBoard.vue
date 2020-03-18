@@ -17,6 +17,7 @@
           z-index: 5;
           top: ${top};
           left: ${left};
+          background-color: black;
         `"
       ></canvas>
 
@@ -162,6 +163,7 @@ export default {
     drawUtils.setPlayerContext(this.$refs.playerBoard.getContext('2d', { alpha: false }));
     drawUtils.setBackgroundContext(this.$refs.backgroundBoard.getContext('2d', { alpha: false }));
     drawUtils.setObstacleContext(this.$refs.obstacleBoard.getContext('2d', { alpha: false }));
+    drawUtils.startDrawing();
 
     this.$refs.startPositionSVG.addEventListener('mousedown', (e) => {
       this.getMousePosition(this.$refs.startPositionSVG, e);

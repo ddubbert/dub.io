@@ -47,9 +47,14 @@ let sounds = [];
 let animationInterval = null;
 
 let backgroundImage = null;
+const BACKGROUND_SCALE = 4;
 let backgroundScratchSize = 1;
 
 let currentUserRadius = 0;
+const currentUserPosition = {
+  x: gameOptions.GRID_SIZE / 2,
+  y: gameOptions.GRID_SIZE / 2,
+};
 let currentCellSize = 0;
 let currentGridIndices = {
   x: 0,
@@ -68,7 +73,7 @@ const createBackgroundImage = () => {
   const lineDist = lineThicknes * 10;
   const greaterDist = lineDist * 10;
 
-  const data = `<svg width="${backgroundScratchSize}" height="${backgroundScratchSize}" xmlns="http://www.w3.org/2000/svg"> \
+  const data = `<svg width="${backgroundScratchSize}" height="${backgroundScratchSize}" style="background-color: white;" xmlns="http://www.w3.org/2000/svg"> \
       <defs> \
           <pattern id="smallGrid" width="${lineDist}" height="${lineDist}" patternUnits="userSpaceOnUse"> \
               <path d="M ${lineDist} 0 L 0 0 0 ${lineDist}" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="${lineThicknes / 5}" /> \
@@ -89,16 +94,7 @@ const createBackgroundImage = () => {
 
   img.onload = () => {
     scratchCTX.save();
-    scratchCTX.lineWidth = lineThicknes * 5;
-    scratchCTX.strokeStyle = 'rgb(0,0,0)';
-    scratchCTX.beginPath();
-    scratchCTX.moveTo(0, 0);
-    scratchCTX.lineTo(backgroundScratchSize, 0);
-    scratchCTX.lineTo(backgroundScratchSize, backgroundScratchSize);
-    scratchCTX.lineTo(0, backgroundScratchSize);
-    scratchCTX.lineTo(0, 0);
     scratchCTX.drawImage(img, 0, 0, backgroundScratchSize, backgroundScratchSize);
-    scratchCTX.stroke();
     scratchCTX.restore();
     DOMURL.revokeObjectURL(url);
   };
@@ -111,26 +107,26 @@ const drawBackground = () => {
   if (canvasSize > 1 && backgroundCTX && backgroundImage) {
     backgroundCTX.clearRect(0, 0, canvasSize, canvasSize);
 
+    const backgroundCenter = backgroundScratchSize / 2;
+    const dist = backgroundCenter / zoomScaleFactor;
+    const oX = offset.x * BACKGROUND_SCALE;
+    const oY = offset.y * BACKGROUND_SCALE;
+
+    const startX = backgroundCenter - oX - dist;
+    const startY = backgroundCenter - oY - dist;
+
     backgroundCTX.drawImage(
       backgroundImage,
-      0,
-      0,
-      backgroundScratchSize,
-      backgroundScratchSize,
+      startX,
+      startY,
+      dist * 2,
+      dist * 2,
       0,
       0,
       canvasSize,
       canvasSize,
     );
   }
-};
-
-const translateBackground = () => {
-  backgroundCTX.restore();
-  backgroundCTX.save();
-  backgroundCTX.translate(canvasCenter, canvasCenter);
-  backgroundCTX.scale(zoomScaleFactor, zoomScaleFactor);
-  backgroundCTX.translate(-(canvasCenter - offset.x), -(canvasCenter - offset.y));
 };
 
 const createSounds = (srcArr) => {
@@ -184,7 +180,7 @@ let drawTimeout = null;
 const setCanvasSize = (size) => {
   canvasSize = size;
   canvasCenter = size / 2;
-  backgroundScratchSize = (canvasSize + 2) * 4;
+  backgroundScratchSize = canvasSize * BACKGROUND_SCALE;
   playerBoardSize = canvasSize * PLAYER_RADIUS_SIZE_FACTOR_ON_BOARD;
   setCanvasScaling();
 
@@ -370,6 +366,8 @@ const prepareRendering = (grid) => {
   }
 
   if (user) {
+    currentUserPosition.x = user.position.x;
+    currentUserPosition.y = user.position.y;
     offset.x = canvasCenter - user.position.x * canvasScaling;
     offset.y = canvasCenter - user.position.y * canvasScaling;
 
@@ -423,7 +421,18 @@ const drawGrid = (grid) => {
 
   if (userId) drawPlayerGrid(grid);
   else drawMasterGrid(grid);
-  renderCount += 1;
+};
+
+const draw = () => {
+  try {
+    prepareRendering(currentGrid);
+    drawBackground();
+    drawGrid(currentGrid);
+    renderCount += 1;
+  } catch (e) {
+    console.error(e);
+  }
+  window.requestAnimationFrame(draw);
 };
 
 (async () => {
@@ -437,13 +446,9 @@ const drawGrid = (grid) => {
     error(err) { console.error('err', err); },
   });
 
-
-  setInterval(() => {
-    prepareRendering(currentGrid);
-    drawBackground();
-    translateBackground();
-    drawGrid(currentGrid);
-  }, 1000 / gameOptions.FPS);
+  // setInterval(() => {
+  //   draw();
+  // }, 1000 / gameOptions.FPS);
 
   setInterval(() => {
     const diff = (new Date().getTime() - start);
@@ -455,6 +460,9 @@ const drawGrid = (grid) => {
   }, 5000);
 })();
 
+const startDrawing = () => {
+  window.requestAnimationFrame(draw);
+};
 
 module.exports = {
   startMusic,
@@ -464,4 +472,5 @@ module.exports = {
   setBackgroundContext,
   setObstacleContext,
   setUserId,
+  startDrawing,
 };

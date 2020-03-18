@@ -89,7 +89,8 @@ const changeDirection = (id, direction) => {
 
 const moveUsers = async () => {
   Object.keys(users).forEach((id) => {
-    const slowDown = Math.min(1 - (users[id].radius / gameOptions.GRID_SIZE / 2), 0.5)
+    const slowDown = Math.max(1 - (users[id].radius / gameOptions.GRID_SIZE / 2), 0.25)
+
     users[id].position.x += users[id].direction.x
       * (users[id].speed / (gameOptions.FPS * 1.1)) * slowDown
     users[id].position.y += users[id].direction.y
@@ -214,17 +215,16 @@ const resetUserPosition = (uId) => {
 const processCollision = (node1, node2) => {
   if (node2.type === NODE_TYPES.BOUNDARIES) {
     if (!userBoundarieHits[node1.id]) {
-      userBoundarieHits[node1.id] = 'test'
+      userBoundarieHits[node1.id] = setTimeout(() => {
+        delete userBoundarieHits[node1.id]
+      }, 1000)
+
       const newRadius = users[node1.id].radius * gameOptions.PLAYER_RESET_FACTOR
 
       if (newRadius < gameOptions.PLAYER_RADIUS) deleteUser(node1.id)
       else users[node1.id].radius = newRadius
 
       resetUserPosition(node1.id)
-
-      userBoundarieHits[node1.id] = setTimeout(() => {
-        delete userBoundarieHits[node1.id]
-      }, 1000)
     }
   } else if (users[node2.id]
     && users[node1.id].radius > users[node2.id].radius
@@ -262,7 +262,12 @@ const processUserEvent = (userEvent) => {
 
   switch (userEvent.event) {
     case USER_EVENTS.GROW:
-      if (userEvent.value) users[uId].radius += userEvent.value * users[uId].growFactor
+      if (userEvent.value) {
+        const { value } = userEvent
+        const slowDown = Math.max(1 - (users[uId].radius / gameOptions.GRID_SIZE / 2), 0.25)
+
+        users[uId].radius += (value > 0) ? value * users[uId].growFactor * slowDown : value
+      }
       if (users[uId].radius < gameOptions.PLAYER_RADIUS) deleteUser(uId)
       break
     case USER_EVENTS.DESTROY:

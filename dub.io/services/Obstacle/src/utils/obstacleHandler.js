@@ -40,7 +40,6 @@ const getNodes = () => {
 
 const publishWarpCollision = async (playerNode) => {
   if (!userWarpCollisions[playerNode.id]) {
-    userWarpCollisions[playerNode.id] = 'test'
     userWarpCollisions[playerNode.id] = setTimeout(() => {
       delete userWarpCollisions[playerNode.id]
     }, 1000)
@@ -64,7 +63,7 @@ const publishWarpCollision = async (playerNode) => {
 
 const publishVirusCollision = async (playerNode) => {
   if (!userVirusCollisions[playerNode.id]) {
-    userVirusCollisions[playerNode.id] = 'test'
+    console.log('collide: ', playerNode.id, playerNode.radius)
     userVirusCollisions[playerNode.id] = setTimeout(() => {
       delete userVirusCollisions[playerNode.id]
     }, 1000)
@@ -74,7 +73,7 @@ const publishVirusCollision = async (playerNode) => {
     const growMessage = userEvents.toBuffer({
       userId: playerNode.id,
       event: USER_EVENTS.GROW,
-      value: -(playerNode.radius / 2),
+      value: -(playerNode.radius * gameOptions.PLAYER_RESET_FACTOR),
       activeTime: null,
     })
 
@@ -125,7 +124,7 @@ const addWarp = (x, y) => {
     type: NODE_TYPES.OBSTACLE,
     title: OBSTACLE_TYPES.WARP,
     position: { x, y },
-    radius: gameOptions.OBSTACLE_MIN_RADIUS,
+    radius: gameOptions.WARP_RADIUS,
     sprite: gameOptions.DEFAULT_WARP_SPRITE,
     color: 'rgba(0,0,0,0)',
   }
@@ -136,11 +135,11 @@ const addWarp = (x, y) => {
 const addVirusRandomlyBetweenPositions = (x1, y1, x2, y2) => {
   const distX = x2 - x1
   const distY = y2 - y1
-  const diffRadius = gameOptions.OBSTACLE_MAX_RADIUS - gameOptions.OBSTACLE_MIN_RADIUS
+  const diffRadius = gameOptions.VIRUS_MAX_RADIUS - gameOptions.VIRUS_MIN_RADIUS
 
   const x = x1 + Math.random() * distX
   const y = y1 + Math.random() * distY
-  const radius = gameOptions.OBSTACLE_MIN_RADIUS + Math.random() * diffRadius
+  const radius = gameOptions.VIRUS_MIN_RADIUS + Math.random() * diffRadius
 
   const obstacle = {
     id: uniqid(),
@@ -165,51 +164,51 @@ const addVirusRandomlyBetweenPositions = (x1, y1, x2, y2) => {
 
 const generateObstacles = () => {
   addVirusRandomlyBetweenPositions(
-    gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
+    gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 - gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 - gameOptions.VIRUS_MAX_RADIUS,
   )
 
   addVirusRandomlyBetweenPositions(
-    gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 + gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE - gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 - gameOptions.VIRUS_MAX_RADIUS,
   )
 
   addVirusRandomlyBetweenPositions(
-    gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE / 2 - gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
+    gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 + gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 - gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE - gameOptions.VIRUS_MAX_RADIUS,
   )
 
   addVirusRandomlyBetweenPositions(
-    gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE / 2 + gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
-    gameOptions.GRID_SIZE - gameOptions.OBSTACLE_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 + gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE / 2 + gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE - gameOptions.VIRUS_MAX_RADIUS,
+    gameOptions.GRID_SIZE - gameOptions.VIRUS_MAX_RADIUS,
   )
 
   addWarp(
-    gameOptions.OBSTACLE_MIN_RADIUS + 1,
-    gameOptions.OBSTACLE_MIN_RADIUS + 1,
+    gameOptions.WARP_RADIUS,
+    gameOptions.WARP_RADIUS,
   )
 
   addWarp(
-    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
-    gameOptions.OBSTACLE_MIN_RADIUS + 1,
+    gameOptions.GRID_SIZE - (gameOptions.WARP_RADIUS),
+    gameOptions.WARP_RADIUS,
   )
 
   addWarp(
-    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
-    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
+    gameOptions.GRID_SIZE - (gameOptions.WARP_RADIUS),
+    gameOptions.GRID_SIZE - (gameOptions.WARP_RADIUS),
   )
 
   addWarp(
-    gameOptions.OBSTACLE_MIN_RADIUS + 1,
-    gameOptions.GRID_SIZE - (gameOptions.OBSTACLE_MIN_RADIUS + 1),
+    gameOptions.WARP_RADIUS,
+    gameOptions.GRID_SIZE - (gameOptions.WARP_RADIUS),
   )
 }
 
