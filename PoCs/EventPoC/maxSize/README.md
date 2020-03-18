@@ -14,19 +14,9 @@
   
 * Start the **producer** with **npm start**
 
-* Start the **producer2** with **npm start**
-
-* Start the **producer3** with **npm start**
-
 * Start the **consumer** with **npm start**
 
-* Start the **consumer2** with **npm start**
-
-* Start the **consumer3** with **npm start**
-
-* Start the **starter** with **npm start**
-
-* Start sending events by using a **POST**-Operation on **localhost:3000**
+* Start sending events by using a **POST**-Operation on **localhost:3001**
   * Body can contain amount of Events that should be generated:
   
   ```jsonc
