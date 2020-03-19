@@ -31,3 +31,4 @@ Focus points for this project are:
   * Microservice architectures and needed components
 
 ## Installation
+All installation hints are provided by the README-file of the [dub.io-folder](https://github.com/ddubbert/dub.io/tree/master/dub.io).
