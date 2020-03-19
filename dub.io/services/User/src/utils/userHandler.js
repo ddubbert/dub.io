@@ -219,7 +219,7 @@ const processCollision = (node1, node2) => {
         delete userBoundarieHits[node1.id]
       }, 1000)
 
-      const newRadius = users[node1.id].radius * gameOptions.PLAYER_RESET_FACTOR
+      const newRadius = users[node1.id].radius * gameOptions.BOUNDARIES_RESET_FACTOR
 
       if (newRadius < gameOptions.PLAYER_RADIUS) deleteUser(node1.id)
       else users[node1.id].radius = newRadius

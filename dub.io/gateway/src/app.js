@@ -1,7 +1,6 @@
 require('dotenv').config()
 
-const { GraphQLServer } = require('graphql-yoga')
-const { express: middleware } = require('graphql-voyager/middleware')
+const { ApolloServer } = require('apollo-server')
 
 const fetch = require('node-fetch')
 const {
@@ -75,24 +74,21 @@ function createLink(url) {
     ],
   })
 
-  const server = new GraphQLServer({
+  const server = new ApolloServer({
     schema: fullSchema,
     context: req => ({
       ...req,
     }),
+    playground: {
+      endpoint: process.env.PLAYGROUND,
+    },
+    subscriptions: process.env.SUBSCRIPTIONS,
   })
 
-  server.express
-    .use(process.env.VOYAGER, middleware({ endpointUrl: process.env.ENDPOINT }))
-
-  const options = {
-    port: process.env.PORT,
-    playground: process.env.PLAYGROUND,
-    endpoint: process.env.ENDPOINT,
-    subscriptions: process.env.SUBSCRIPTIONS,
-    debug: false,
-  }
-
-  server
-    .start(options, () => console.log(`Server is running on ${config.http}${config.host}:${process.env.PORT}`))
+  server.listen({ host: config.host, port: process.env.PORT, endpoint: process.env.ENDPOINT })
+    .then(({ url, subscriptionsPath }) => {
+      console.log(url)
+      console.log(subscriptionsPath)
+      console.log(`Server is running on ${url}`)
+    })
 })()

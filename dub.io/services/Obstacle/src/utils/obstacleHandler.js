@@ -63,7 +63,6 @@ const publishWarpCollision = async (playerNode) => {
 
 const publishVirusCollision = async (playerNode) => {
   if (!userVirusCollisions[playerNode.id]) {
-    console.log('collide: ', playerNode.id, playerNode.radius)
     userVirusCollisions[playerNode.id] = setTimeout(() => {
       delete userVirusCollisions[playerNode.id]
     }, 1000)

@@ -5,12 +5,14 @@ const config = require('../../../../config');
 const graphqlClient = require('./graphql.utils').default;
 const subscriptions = require('./subscriptions');
 
+let subClient = null;
+
 let count = 0;
 let renderCount = 0;
 let currentGrid = {};
 let start = new Date().getTime();
 
-const client = graphqlClient(`${config.http}${config.host}:3000/graphql`, `${config.ws}${config.host}:3000/subscriptions`);
+const client = graphqlClient(`${config.http}${config.host}:3003/graphql`, `${config.ws}${config.host}:3003/subscriptions`);
 
 const PLAYER_RADIUS_SIZE_FACTOR_ON_BOARD = 0.1;
 
@@ -61,6 +63,27 @@ let currentGridIndices = {
   y: 0,
 };
 let amountCells = 0;
+
+
+const subscribeToGrid = async () => {
+  try {
+    count = 0;
+
+    if (subClient) subClient.unsubscribe();
+
+    subClient = await client.subscribe({
+      query: subscriptions.GRID_SUBSCRIPTION,
+    }).subscribe({
+      next({ data }) {
+        count += 1;
+        currentGrid = data.renderUpdates;
+      },
+      error(err) { console.error('err', err); },
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 const createBackgroundImage = () => {
   const scratch = document.createElement('canvas');
@@ -197,6 +220,7 @@ const setUserId = (id) => {
   start = new Date().getTime();
   count = 0;
   renderCount = 0;
+  subscribeToGrid();
 };
 
 const setPlayerContext = (context) => {
@@ -436,16 +460,7 @@ const draw = () => {
 };
 
 (async () => {
-  await client.subscribe({
-    query: subscriptions.GRID_SUBSCRIPTION,
-  }).subscribe({
-    next({ data }) {
-      count += 1;
-      currentGrid = data.renderUpdates;
-    },
-    error(err) { console.error('err', err); },
-  });
-
+  subscribeToGrid();
   // setInterval(() => {
   //   draw();
   // }, 1000 / gameOptions.FPS);
@@ -473,4 +488,5 @@ module.exports = {
   setObstacleContext,
   setUserId,
   startDrawing,
+  subscribeToGrid,
 };
