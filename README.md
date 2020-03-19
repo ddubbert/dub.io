@@ -22,12 +22,12 @@ The objective is to create a simple copy of the massive multiplayer online game 
 * If players collide, the bigger one will consume the other.
 * Players loose if they were consumed by others.
 
-Even though there are additional rules and possibilities, these are the ones that form the basis for this project. Each seperate task will be handled by one service. There might be services for movement, collision, food operations, user generation, statistics and so on. Services communicate via Apache Kafka channels and client-server communications are donw via GraphQL and an API-Gateway. The synchronization of all the clients / players is another important task, assigned to a seperate service. This service will collect all the needed informations to update the map. It will also distribute this synchronized map-data to all the clients, so that these only need to update their current view without the need of implementing any other logic.
+Even though there are additional rules and possibilities, these are the ones that form the basis for this project. Each seperate task will be handled by one service. There might be services for movement, collision, food operations, statistics and so on. Services communicate via Apache Kafka channels and client-server communications are done via GraphQL and an API-Gateway. The synchronization of all the clients / players is another important task, assigned to a seperate service. This service will collect all the needed informations to update the map. It will also distribute this synchronized map-data to all the clients, so that these only need to update their current view without the need of implementing any other logic.
 
 Focus points for this project are:
 * The event-design and setup of communication channels (Apache Kafka-Architecture)
   * Testing and comparing benefits of different designs
 * The design and connection of services (Microservice-Architecture, GraphQL)
-  * Microservice architectures and needed components (apart from the services)
+  * Microservice architectures and needed components
 
 ## Installation
