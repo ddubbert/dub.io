@@ -4,7 +4,6 @@ const { Kafka } = require('kafkajs')
 const uniqid = require('uniqid')
 
 const NODE_TYPES = require('../../../../NodeTypes')
-const USER_EVENTS = require('../../../../UserEvents')
 const ITEM_TYPES = require('../utils/enums/ItemTypes')
 
 const nodePositionsSchema = require('../../../avro_schemas/NodePositions')
@@ -118,7 +117,7 @@ const createTopics = async () => {
     replicationFactor: 1,
   }, {
     topic: config.collisionTopic,
-    numPartitions: 3,
+    numPartitions: 4,
     replicationFactor: 1,
   }, {
     topic: config.userEventsTopic,

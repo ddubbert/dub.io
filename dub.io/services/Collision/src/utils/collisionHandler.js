@@ -103,7 +103,7 @@ const checkForCollisions = async (message) => {
 const createTopics = async () => {
   const topicsToCreate = [{
     topic: config.collisionTopic,
-    numPartitions: 3,
+    numPartitions: 4,
     replicationFactor: 1,
   },
   {
