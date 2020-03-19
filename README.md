@@ -32,3 +32,6 @@ Focus points for this project are:
 
 ## Installation
 All installation hints are provided by the README-file of the [dub.io-folder](https://github.com/ddubbert/dub.io/tree/master/dub.io).
+
+## Development & Research
+More informations about the research and development process are documented in the projects [Wiki](https://github.com/ddubbert/dub.io/wiki).
