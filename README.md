@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/ddubbert/dub.io/blob/master/images/enterGame.gif"/>
+</p>
+
 # dub.io
 This project is meant to be a usability test of Continuous Event Stream Processing in a realtime environment. It represents an Agar.io clone based on Continuous Event Streams and Microservices. The Services are based on Node.js and GraphQL. The communication between these services is realized in a loosely coupled way with the help of Apache Kafka.
 
