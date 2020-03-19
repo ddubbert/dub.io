@@ -13,6 +13,10 @@
 ## Start Program
 If you are using macOS: use the **start** application in the **dub.io** folder.
 
+<p align="center">
+  <img src="https://github.com/ddubbert/dub.io/blob/master/images/startScript.gif"/>
+</p>
+
 If not, do as follows:
   
 * Start a Zookeeper instance with the previously edited **zookeeper.properties** config-file
