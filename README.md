@@ -29,6 +29,7 @@ Focus points for this project are:
   * Testing and comparing benefits of different designs
 * The design and connection of services (Microservice-Architecture, GraphQL)
   * Microservice architectures and needed components
+* Does such a service make sense on a single node / machine? 
 
 ## Installation
 All installation hints are provided by the README-file of the [dub.io-folder](https://github.com/ddubbert/dub.io/tree/master/dub.io).
