@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-param-reassign */
 const NODE_TYPES = require('../../../../NodeTypes');
 const gameOptions = require('../../../../gameOptions');
@@ -354,34 +355,6 @@ const drawColorCircle = (node, ctx) => {
   ctx.restore();
 };
 
-const drawMasterGrid = (grid) => {
-  grid.cols.forEach((col) => {
-    col.rows.forEach((row) => {
-      row.nodes.forEach((node) => {
-        let ctx = playerCTX;
-        if (node.type === NODE_TYPES.OBSTACLE) ctx = obstacleCTX;
-
-        if (node.sprite) drawImageCircle(node, ctx);
-        else drawColorCircle(node, ctx);
-      });
-    });
-  });
-};
-
-const drawPlayerGrid = (grid) => {
-  xIndices.forEach((xI) => {
-    yIndices.forEach((yI) => {
-      grid.cols[xI].rows[yI].nodes.forEach((node) => {
-        let ctx = playerCTX;
-        if (node.type === NODE_TYPES.OBSTACLE) ctx = obstacleCTX;
-
-        if (node.sprite) drawImageCircle(node, ctx);
-        else drawColorCircle(node, ctx);
-      });
-    });
-  });
-};
-
 const prepareRendering = (grid) => {
   let user = null;
   if (userId) {
@@ -409,25 +382,22 @@ const prepareRendering = (grid) => {
         (canvasSize / 2 / zoomScaleFactor / canvasScaling) / grid.cellSize,
       ) + 1;
 
-      xIndices = [...Array(amountCells).keys()].reduce((acc, index) => {
-        if (index === 0) return acc;
-        const indices = [];
-        if (user.gridIndices.x - index >= 0) indices.push(user.gridIndices.x - index);
-        if (user.gridIndices.x + index <= grid.cols.length - 1) {
-          indices.push(user.gridIndices.x + index);
+      const { x } = user.gridIndices;
+      const { y } = user.gridIndices;
+      xIndices = [x];
+      yIndices = [y];
+      const colsLen = grid.cols.length;
+      const rowsLen = grid.cols[0].rows.length || 0;
+      for (let i = 1; i < amountCells; ++i) {
+        if (x - i >= 0) xIndices.push(x - i);
+        if (x + i <= colsLen - 1) {
+          xIndices.push(x + i);
         }
-        return [...acc, ...indices];
-      }, [user.gridIndices.x]);
-
-      yIndices = [...Array(amountCells).keys()].reduce((acc, index) => {
-        if (index === 0) return acc;
-        const indices = [];
-        if (user.gridIndices.y - index >= 0) indices.push(user.gridIndices.y - index);
-        if (user.gridIndices.y + index <= grid.cols[0].rows.length - 1) {
-          indices.push(user.gridIndices.y + index);
+        if (y - i >= 0) yIndices.push(y - i);
+        if (y + i <= rowsLen - 1) {
+          yIndices.push(y + i);
         }
-        return [...acc, ...indices];
-      }, [user.gridIndices.y]);
+      }
     }
   } else {
     offset.x = 0;
@@ -443,8 +413,24 @@ const drawGrid = (grid) => {
   playerCTX.clearRect(0, 0, canvasSize, canvasSize);
   obstacleCTX.clearRect(0, 0, canvasSize, canvasSize);
 
-  if (userId) drawPlayerGrid(grid);
-  else drawMasterGrid(grid);
+  const xLen = xIndices.length;
+  const yLen = yIndices.length;
+
+  for (let i = 0; i < xLen; ++i) {
+    for (let j = 0; j < yLen; ++j) {
+      const x = xIndices[i];
+      const y = yIndices[j];
+      const nLen = grid.cols[x].rows[y].nodes.length;
+      for (let n = 0; n < nLen; ++n) {
+        const node = grid.cols[x].rows[y].nodes[n];
+        let ctx = playerCTX;
+        if (node.type === NODE_TYPES.OBSTACLE) ctx = obstacleCTX;
+
+        if (node.sprite) drawImageCircle(node, ctx);
+        else drawColorCircle(node, ctx);
+      }
+    }
+  }
 };
 
 const draw = () => {
@@ -461,9 +447,6 @@ const draw = () => {
 
 (async () => {
   subscribeToGrid();
-  // setInterval(() => {
-  //   draw();
-  // }, 1000 / gameOptions.FPS);
 
   setInterval(() => {
     const diff = (new Date().getTime() - start);
