@@ -21,6 +21,6 @@
   
   ```jsonc
   	{
-  		"numberOfEvents": 20000
+  		"numberOfItems": 20000
   	}
   ```
