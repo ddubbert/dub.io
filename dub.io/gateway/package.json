@@ -15,7 +15,7 @@
     "dotenv": "7.0.0",
     "graphql": "14.3.1",
     "graphql-tools": "4.0.5",
-    "node-fetch": "2.6.0",
+    "node-fetch": "2.6.1",
     "nodemon": "1.17.5",
     "subscriptions-transport-ws": "0.9.16",
     "ws": "7.0.0"
