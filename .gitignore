@@ -98,3 +98,13 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Local runtime state of Kafka / ZooKeeper (created when running the PoCs)
+**/zookeeper/data/
+**/kafka/**/data/
+
+# Compiled AppleScript launchers (build them from the .scpt files if needed)
+*.app/
+
+# Local environment files; copy each .env.example to .env
+.env

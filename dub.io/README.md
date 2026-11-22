@@ -1,5 +1,8 @@
 ## Installation
 
+* Each service, the gateway and every PoC ship an **.env.example** with the default settings. Copy it to **.env** next to it, e.g. from the repository root:
+  `find . -name .env.example -not -path '*/node_modules/*' -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;`
+
 * Open **kafka/b1/server.properties**
   * Change **log.dirs**-Path to match your **kafka/b1/data** folder path
   
@@ -8,10 +11,10 @@
  
 * For each folder: **gateway**, **client/dub_client**, **services/User**, **services/Statistic**, **services/Render**, **services/Obstacle**, **services/NodeCollector**, **services/Item**, **services/Food**, **services/Collision**
   * Run **npm install**
-  * Alternatively if you are using macOS: Use the **install** application in the **dub.io** folder. 
+  * Alternatively if you are using macOS: run `osascript install.scpt` in the **dub.io** folder.
 
 ## Start Program
-If you are using macOS: use the **start** application in the **dub.io** folder.
+If you are using macOS: run `osascript start.scpt` in the **dub.io** folder.
 
 <p align="center">
   <img src="https://github.com/ddubbert/dub.io/blob/master/images/startScript.gif"/>
@@ -51,7 +54,7 @@ If not, do as follows:
 * If you want to change the amount of Food-Node, the FPS or other options do so in the **gameOptions** file
   * This might be needed if your Computer is not able to handle that many Nodes, or is able to handle even more Nodes. The performance bottleneck is the Frontend / Client which still needs to be improved !!! (but is enough for a prototype)
   
-* If you want to reset the kafka state / data and if you are using macOS: Use the **clear** application in the **dub.io** folder
+* If you want to reset the kafka state / data and if you are using macOS: run `osascript clear.scpt` in the **dub.io** folder
 
 
 
